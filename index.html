@@ -828,6 +828,9 @@ btn.onclick=async()=>{
     else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);sim.flash('로그인 실패: '+e.code,true,5000);}}
 };
 </script>
-<script>if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
+<script>if("serviceWorker" in navigator&&location.protocol.startsWith("http")){
+  const had=!!navigator.serviceWorker.controller;let done=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{if(had&&!done){done=true;location.reload();}});
+  navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(r=>{r.update();document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")r.update();});}).catch(()=>{});}</script>
 </body>
 </html>
