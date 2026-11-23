@@ -71,7 +71,7 @@ text{pointer-events:none}
   <div class="mi" data-menu="mView">보 기</div>
   <div class="mi" data-menu="mEq">공압 실습 장비</div>
   <div class="ttl">공압실습실</div>
-  <div class="rt"><div class="mi" id="reView" title="시점 복귀 (스페이스바)">⟲</div></div>
+  <div class="rt"><div class="mi" id="cloudBtn" title="구글 로그인하면 다른 기기와 자동 동기화">☁ 로그인</div><div class="mi" id="reView" title="시점 복귀 (스페이스바)">⟲</div></div>
   <div class="menu" id="mFile" style="left:0">
     <div data-cmd="ex:hold">예제 ① 자기유지 회로 (PB2 시작 / PB1 정지)</div>
     <div data-cmd="ex:auto">예제 ② 센서로 연속 왕복 (양솔 밸브)</div>
@@ -124,7 +124,7 @@ text{pointer-events:none}
 <li><b>보기</b>: 두 손가락으로 확대/축소, 빈 곳을 끌면 화면 이동. PC는 Ctrl+휠 확대. 스페이스바 = 시점 복귀.</li>
 <li><b>실린더 손으로 당기기</b>: 로드 끝(은색 머리)을 잡고 좌우로 끌면 실린더가 따라 움직여요. 리미트 스위치는 로드 끝이 롤러에 실제로 닿으면 켜지니까, 원하는 위치까지 당겨 놓고 그 머리 아래에 스위치 롤러가 닿게 놓으면 돼요. (공기를 닫아 두면 놓아도 그 자리에 있어요)</li>
 <li>+24V와 0V를 바로 이으면 단락으로 전원이 꺼져요. 복동 실린더는 A·B 두 포트를 모두 밸브에 연결해야 움직여요.</li>
-<li>배선은 이 브라우저에 자동 저장돼요.</li>
+<li>배선은 이 브라우저에 자동 저장돼요. 오른쪽 위 <b>☁ 로그인</b>으로 구글 로그인하면 클라우드에도 저장돼서, 다른 기기에서 같은 계정으로 로그인하면 이어서 할 수 있어요.</li>
 </ul>
 <button id="closeHelp">닫기</button>
 </div></div>
@@ -618,7 +618,9 @@ function updStatus(now){let m,w=false;if(flashT>now){m=flashM;w=flashW;}else if(
 
 /* ===== 저장 ===== */
 const ser=()=>JSON.stringify({parts,wires,reg:S.reg});
-function save(){try{localStorage.setItem(KEY,ser());}catch(e){}}
+function save(){try{localStorage.setItem(KEY,ser());}catch(e){}if(window.__cloudSave)window.__cloudSave();}
+function applyState(str){let s;try{s=JSON.parse(str);}catch(e){return false;}if(!s||!Array.isArray(s.parts)||!s.parts.some(p=>p.id==='PW'))return false;
+  parts=s.parts;wires=s.wires||[];S.reg=s.reg||5;HIST.e=[];HIST.p=[];REDO.e=[];REDO.p=[];rebuild();try{localStorage.setItem(KEY,str);}catch(e){}return true;}
 
 /* ===== 레이아웃 / 예제 ===== */
 const MX=i=>164+i*184;
@@ -775,8 +777,44 @@ function frameLoop(now){const dt=Math.min(.05,(now-last)/1000);last=now;hints=[]
   for(const w of wires)if(w.kind==='p'&&WEL[w.id]){const on=PST(w.a)==='P';setA(WEL[w.id],'display',on?'':'none');if(on)WEL[w.id].setAttribute('stroke-dashoffset',airOff.toFixed(1));}
   updStatus(now);requestAnimationFrame(frameLoop);}
 requestAnimationFrame(frameLoop);
-window.__sim={S,get parts(){return parts},get wires(){return wires},get RT(){return RT},loadExample};
+window.__sim={S,get parts(){return parts},get wires(){return wires},get RT(){return RT},loadExample,applyState,flash,busy:()=>!!(drag||conn||rodDrag||pending||pinch)};
 }
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,setDoc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyCWKo6bv5CCJBIHJOaKfKWUrrMG8oElgEY",authDomain:"pneusim-738a0.firebaseapp.com",projectId:"pneusim-738a0",storageBucket:"pneusim-738a0.firebasestorage.app",messagingSenderId:"395447552200",appId:"1:395447552200:web:eee52a48994b9c97c8fdfd"});
+const auth=getAuth(app),db=getFirestore(app),btn=document.getElementById('cloudBtn'),sim=window.__sim;
+const KEY='pneusim_v2',TK=KEY+'_t',CID=Math.random().toString(36).slice(2);
+let user=null,ref=null,unsub=null,timer=null,ready=false;
+const lt=()=>+(localStorage.getItem(TK)||0),setLt=t=>{try{localStorage.setItem(TK,String(t));}catch(e){}};
+const ui=s=>{btn.textContent=s;};
+window.__cloudSave=()=>{setLt(Date.now());if(!user||!ready)return;ui('☁ 저장 중…');clearTimeout(timer);timer=setTimeout(push,1500);};
+async function push(){const data=localStorage.getItem(KEY);if(!data||!ref)return;
+  if(!navigator.onLine){ui('☁ 오프라인');return;}
+  try{await setDoc(ref,{data,t:lt(),cid:CID,at:serverTimestamp()});ui('☁ 저장됨');}catch(e){console.error(e);ui('☁ 저장 실패');}}
+function applyRemote(d,msg){if(sim.busy()){setTimeout(()=>applyRemote(d,msg),800);return;}
+  if(sim.applyState(d.data)){setLt(d.t);if(msg)sim.flash(msg,false,4000);}}
+window.addEventListener('online',()=>{if(user&&ready)push();});
+onAuthStateChanged(auth,async u=>{if(unsub){unsub();unsub=null;}user=u;ready=false;
+  if(!u){ref=null;ui('☁ 로그인');btn.title='구글 로그인하면 다른 기기와 자동 동기화';return;}
+  btn.title=(u.email||'')+' — 누르면 로그아웃';ui('☁ 불러오는 중…');ref=doc(db,'users',u.uid);
+  try{const snap=await getDoc(ref);
+    if(snap.exists()&&(snap.data().t||0)>lt())applyRemote(snap.data(),'☁ 클라우드에 저장된 작업을 불러왔어요');
+    else{ready=true;await push();}
+    ready=true;ui('☁ 저장됨');
+    unsub=onSnapshot(ref,s=>{if(!s.exists()||s.metadata.hasPendingWrites)return;const d=s.data();
+      if(d.cid!==CID&&(d.t||0)>lt())applyRemote(d,'☁ 다른 기기에서 바뀐 내용을 불러왔어요');});
+  }catch(e){console.error(e);ui('☁ 연결 실패');}});
+getRedirectResult(auth).catch(e=>console.error(e));
+btn.onclick=async()=>{
+  if(user){if(confirm(`${user.email||'구글 계정'} 로그아웃할까요?\n(이 기기의 작업은 그대로 남아요)`)){await signOut(auth);}return;}
+  const pv=new GoogleAuthProvider();
+  try{await signInWithPopup(auth,pv);}catch(e){
+    if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment')await signInWithRedirect(auth,pv);
+    else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){console.error(e);sim.flash('로그인 실패: '+e.code,true,5000);}}
+};
 </script>
 <script>if("serviceWorker" in navigator&&location.protocol.startsWith("http")){navigator.serviceWorker.register("sw.js").catch(()=>{});}</script>
 </body>
