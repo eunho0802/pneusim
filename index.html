@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b1640">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -29,8 +29,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#15181d;font-family:-a
 .menu div:hover{background:#24387a}
 .menu .dis{color:#7f8bb0;cursor:default}
 #mid{flex:1;position:relative;min-height:0}
-#wrap{position:absolute;inset:0;overflow:auto;background:#30343a;-webkit-overflow-scrolling:touch}
-#board{display:block;touch-action:none}
+#wrap{position:absolute;inset:0;overflow:hidden;background:#30343a;touch-action:none}
+#board{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;overflow:visible;transform-origin:0 0}
 #side{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:4}
 .pnl{background:#0b1640;border:1px solid #2a3d7c;border-radius:6px;display:flex;flex-direction:column;align-items:center;padding:6px 5px;gap:6px}
 .pnl b{font-size:15px;color:#fff}
@@ -121,7 +121,7 @@ text{pointer-events:none}
 <li><b>램프 모듈</b>: 검정 단자(+) – 파랑 단자. 같은 줄 파랑 단자 3개는 안에서 이어져 있으니 하나만 0V에 연결.</li>
 <li><b>DIGITAL TIME MODULE</b>: T1 = ON 딜레이(코일 ON 후 설정 시간 뒤 접점 전환), T2 = OFF 딜레이(코일 OFF 후 설정 시간 동안 유지). 접점은 왼쪽 2개 a, 오른쪽 2개 b. 화면 아래 ■■로 시간 −/＋.</li>
 <li><b>COUNTER MODULE</b>: A1–A2에 신호가 들어올 때마다 1씩 셈, R1–R2는 리셋. 위 숫자 = 설정값(▼▲), 아래 = 현재값. 설정값 도달 시 공통–1 끊김, 공통–2 연결.</li>
-<li><b>보기</b>: 두 손가락으로 확대/축소, 빈 곳을 끌면 화면 이동. PC는 Ctrl+휠 확대. 스페이스바 = 시점 복귀.</li>
+<li><b>보기</b>: 두 손가락으로 확대/축소, 빈 곳을 끌면 화면 이동. PC는 마우스 휠로 확대/축소(커서 위치 기준). 스페이스바 = 시점 복귀.</li>
 <li><b>실린더 손으로 당기기</b>: 로드 끝(은색 머리)을 잡고 좌우로 끌면 실린더가 따라 움직여요. 리미트 스위치는 로드 끝이 롤러에 실제로 닿으면 켜지니까, 원하는 위치까지 당겨 놓고 그 머리 아래에 스위치 롤러가 닿게 놓으면 돼요. (공기를 닫아 두면 놓아도 그 자리에 있어요)</li>
 <li>+24V와 0V를 바로 이으면 단락으로 전원이 꺼져요. 복동 실린더는 A·B 두 포트를 모두 밸브에 연결해야 움직여요.</li>
 <li>배선은 이 브라우저에 자동 저장돼요. 오른쪽 위 <b>☁ 로그인</b>으로 구글 로그인하면 클라우드에도 저장돼서, 다른 기기에서 같은 계정으로 로그인하면 이어서 할 수 있어요.</li>
@@ -665,7 +665,7 @@ function freeSpot(w,h){const boxes=parts.filter(q=>TYPES[q.type].movable).map(q=
 /* ===== 선택 / 삭제 ===== */
 const bubble=$('bubble');
 function select(s){sel=s;if(!s)bubble.style.display='none';}
-function showBubble(x,y){const m=svg.getScreenCTM(),r=$('mid').getBoundingClientRect();bubble.style.left=(m.a*x+m.e-r.left)+'px';bubble.style.top=(m.d*y+m.f-r.top)+'px';bubble.style.display='block';}
+function showBubble(x,y){bubble.style.left=((x-tcam.x)*tcam.s)+'px';bubble.style.top=((y-tcam.y)*tcam.s)+'px';bubble.style.display='block';}
 $('delBtn').onclick=()=>{if(!sel)return;
   if(sel.t==='w'){const w=wires.find(q=>q.id===sel.id);if(w){wires=wires.filter(q=>q!==w);hist(w.kind,{op:'del',w});flash('선을 지웠어요 (E/P ↶ 로 되돌리기)');}}
   else{const p=partById(sel.id);if(p){parts=parts.filter(q=>q!==p);flash(`${p.label} 부품을 지웠어요`);}}
@@ -673,7 +673,7 @@ $('delBtn').onclick=()=>{if(!sel)return;
 
 /* ===== 입력 ===== */
 const wrap=$('wrap');
-function pt(e){const q=svg.createSVGPoint();q.x=e.clientX;q.y=e.clientY;return q.matrixTransform(svg.getScreenCTM().inverse());}
+function pt(e){const r=wrap.getBoundingClientRect();return {x:(e.clientX-r.left)/tcam.s+tcam.x,y:(e.clientY-r.top)/tcam.s+tcam.y};}
 function nearestTerm(q,maxd){let best=null,bd=maxd;for(const id in TDEF){const d=TDEF[id],x=d.part.x+d.t.x,y=d.part.y+d.t.y,dd=Math.hypot(q.x-x,q.y-y);if(dd<bd){bd=dd;best=id;}}return best;}
 function doAct(act,p,e){
   if(act==='power'){S.power=!S.power;if(!S.power)clearLoads();flash(S.power?'전원 ON (DC 24V)':'전원 OFF');}
@@ -689,7 +689,7 @@ function doAct(act,p,e){
 const ptrs=new Map();let drag=null,pan=null,pinch=null,conn=null,rodDrag=null,markDrag=null;
 svg.addEventListener('pointerdown',e=>{
   ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});try{svg.setPointerCapture(e.pointerId);}catch(_){}
-  if(ptrs.size===2){drag=null;pan=null;conn=null;if(rodDrag){const rt=RT[rodDrag.p.id];if(rt)rt.manual=false;rodDrag=null;}markDrag=null;const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:zoom,mx:(a.x+b.x)/2,my:(a.y+b.y)/2};rubber.setAttribute('display','none');return;}
+  if(ptrs.size===2){drag=null;pan=null;conn=null;if(rodDrag){const rt=RT[rodDrag.p.id];if(rt)rt.manual=false;rodDrag=null;}markDrag=null;const [a,b]=[...ptrs.values()];pinch=pinchStart(a,b);rubber.setAttribute('display','none');return;}
   if(ptrs.size>2)return;
   const q=pt(e),tg=e.target,act=tg.closest('[data-act]'),pg=tg.closest('[data-part]'),p=pg?partById(pg.dataset.part):null;
   if(act&&p&&act.dataset.act==='rod'){rodDrag={p,id:e.pointerId,sx:q.x,p0:RT[p.id].pos};RT[p.id].manual=true;return;}
@@ -701,47 +701,59 @@ svg.addEventListener('pointerdown',e=>{
     pending=term;updPending();conn={from:term,sx:q.x,sy:q.y,moved:false,id:e.pointerId};return;}
   const wg=tg.closest('[data-wire]');
   if(p&&TYPES[p.type].movable&&!wg){drag={p,ox:q.x-p.x,oy:q.y-p.y,sx:q.x,sy:q.y,moved:false,id:e.pointerId};return;}
-  pan={x:e.clientX,y:e.clientY,sl:wrap.scrollLeft,st:wrap.scrollTop,id:e.pointerId,moved:false,wire:wg?wg.dataset.wire:null,q};
+  pan={x:e.clientX,y:e.clientY,c0:{...tcam},id:e.pointerId,moved:false,wire:wg?wg.dataset.wire:null,q};
 });
 svg.addEventListener('pointermove',e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
-  if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);gestureZoom(pinch.z*d/pinch.d,pinch.mx,pinch.my,(a.x+b.x)/2-pinch.mx,(a.y+b.y)/2-pinch.my);return;}
+  if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()];pinchMove(pinch,a,b);return;}
   if(rodDrag&&e.pointerId===rodDrag.id){const q=pt(e);RT[rodDrag.p.id].pos=clamp(rodDrag.p0+(q.x-rodDrag.sx)/232,0,1);return;}
   if(drag&&e.pointerId===drag.id){const q=pt(e);if(!drag.moved){if(Math.hypot(q.x-drag.sx,q.y-drag.sy)<5)return;drag.moved=true;select(null);}
     const T=TYPES[drag.p.type];drag.p.x=Math.round(clamp(q.x-drag.ox,0,W-T.w));drag.p.y=Math.round(clamp(q.y-drag.oy,268,H-T.h));
     RT[drag.p.id].g.setAttribute('transform',`translate(${drag.p.x},${drag.p.y})`);renderWires();return;}
-  if(pan&&e.pointerId===pan.id){if(!pan.moved&&Math.hypot(e.clientX-pan.x,e.clientY-pan.y)<8)return;pan.moved=true;wrap.scrollLeft=pan.sl-(e.clientX-pan.x);wrap.scrollTop=pan.st-(e.clientY-pan.y);return;}
+  if(pan&&e.pointerId===pan.id){if(!pan.moved&&Math.hypot(e.clientX-pan.x,e.clientY-pan.y)<8)return;if(!pan.moved){pan.moved=true;if(sel){select(null);renderWires();}}setCam({s:pan.c0.s,x:pan.c0.x-(e.clientX-pan.x)/pan.c0.s,y:pan.c0.y-(e.clientY-pan.y)/pan.c0.s});return;}
   if(pending){const q=pt(e);if(conn&&e.pointerId===conn.id&&Math.hypot(q.x-conn.sx,q.y-conn.sy)>8)conn.moved=true;
     if((conn&&conn.moved)||e.pointerType==='mouse'){const a=termPos(pending);rubber.setAttribute('d',`M${a.x},${a.y} L${q.x},${q.y}`);rubber.setAttribute('display','');}}
 });
 function endPtr(e){if(rodDrag&&rodDrag.id===e.pointerId){const rt=RT[rodDrag.p.id];if(rt)rt.manual=false;flash(`실린더 ${rodDrag.p.label} 놓음 (${Math.round((rt?rt.pos:0)*100)}%) — 공기가 밀고 있으면 다시 움직여요`);rodDrag=null;}
-  ptrs.delete(e.pointerId);if(ptrs.size<2&&pinch){pinch=null;commitGesture();}
+  ptrs.delete(e.pointerId);if(ptrs.size<2&&pinch){pinch=null;commitCam();}
   const f=presses.get(e.pointerId);if(f){f();presses.delete(e.pointerId);}
   if(conn&&conn.id===e.pointerId){if(conn.moved){const t=nearestTerm(pt(e),13);if(t&&t!==conn.from)addWire(conn.from,t);pending=null;updPending();}conn=null;}
   if(drag&&drag.id===e.pointerId){if(drag.moved)save();else{const T=TYPES[drag.p.type];if(T.deletable){sel={t:'p',id:drag.p.id};showBubble(drag.p.x+T.w/2,drag.p.y);}}drag=null;}
-  if(pan&&pan.id===e.pointerId){const P=pan;pan=null;if(!P.moved&&e.type==='pointerup'){
+  if(pan&&pan.id===e.pointerId){const P=pan;pan=null;if(P.moved)commitCam();if(!P.moved&&e.type==='pointerup'){
     if(P.wire&&!pending){sel={t:'w',id:P.wire};renderWires();showBubble(P.q.x,P.q.y);}
     else{if(pending){pending=null;updPending();flash('연결 취소');}if(sel){select(null);renderWires();}}}}}
 svg.addEventListener('pointerup',endPtr);svg.addEventListener('pointercancel',endPtr);
 window.addEventListener('blur',()=>{presses.forEach(f=>f());presses.clear();});
 svg.addEventListener('contextmenu',e=>e.preventDefault());
-wrap.addEventListener('scroll',()=>{if(sel){select(null);renderWires();}},{passive:true});
 
 /* ===== 줌 ===== */
-let zoom=1;
-function fitW(){return wrap.clientWidth;}
-let gz=null,wheelT=0;
-function gestureZoom(z,cx,cy,dx,dy){z=clamp(z,1,3);
-  if(!gz){const r=svg.getBoundingClientRect();gz={z0:zoom,cx,cy};svg.style.transformOrigin=`${cx-r.left}px ${cy-r.top}px`;svg.style.willChange='transform';if(sel){select(null);renderWires();}}
-  gz.z=z;gz.dx=dx||0;gz.dy=dy||0;svg.style.transform=`translate(${gz.dx}px,${gz.dy}px) scale(${z/gz.z0})`;}
-function commitGesture(){if(!gz)return;const g=gz;gz=null;svg.style.transform='';svg.style.willChange='';
-  wrap.scrollLeft-=g.dx;wrap.scrollTop-=g.dy;setZoom(g.z,g.cx+g.dx,g.cy+g.dy);}
-function setZoom(z,cx,cy){z=clamp(z,1,3);const r=wrap.getBoundingClientRect();cx=cx??r.left+r.width/2;cy=cy??r.top+r.height/2;
-  const ox=cx-r.left,oy=cy-r.top,old=svg.clientWidth||fitW(),px=(wrap.scrollLeft+ox)/old,py=(wrap.scrollTop+oy)/(old*H/W);
-  zoom=z;const w=fitW()*zoom;svg.style.width=w+'px';svg.style.height=(w*H/W)+'px';wrap.scrollLeft=px*w-ox;wrap.scrollTop=py*w*H/W-oy;if(sel){select(null);renderWires();}}
-function fit(){zoom=1;const w=fitW();svg.style.width=w+'px';svg.style.height=(w*H/W)+'px';wrap.scrollLeft=0;wrap.scrollTop=0;}
-wrap.addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();const cur=gz?gz.z:zoom;gestureZoom(cur*Math.exp(-e.deltaY*0.01),gz?gz.cx:e.clientX,gz?gz.cy:e.clientY,0,0);clearTimeout(wheelT);wheelT=setTimeout(commitGesture,160);}},{passive:false});
-window.addEventListener('resize',()=>setZoom(zoom));
+/* 카메라: 움직이는 동안은 GPU 변환(transform)으로 부드럽게, 멈추면 viewBox로 한 번 선명하게 다시 그림 */
+let cam={s:1,x:0,y:0},tcam={s:1,x:0,y:0},camT=0;
+const vw=()=>wrap.clientWidth||1,vh=()=>wrap.clientHeight||1;
+const sFit=()=>vw()/W,sMin=()=>Math.min(vw()/W,vh()/H)*0.9,sMax=()=>sFit()*5;
+function clampCam(c){const s=clamp(c.s,sMin(),sMax()),w=vw()/s,h=vh()/s;
+  const x=w>=W?(W-w)/2:clamp(c.x,0,W-w),y=h>=H?(H-h)/2:clamp(c.y,0,H-h);return {s,x,y};}
+function applyT(){const k=tcam.s/cam.s,tx=(cam.x-tcam.x)*tcam.s,ty=(cam.y-tcam.y)*tcam.s;
+  if(Math.abs(k-1)<1e-4&&Math.abs(tx)<.05&&Math.abs(ty)<.05){svg.style.transform='';return;}
+  svg.style.willChange='transform';svg.style.transform=`translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) scale(${k.toFixed(5)})`;}
+function setCam(c,commit){tcam=clampCam(c);if(commit)commitCam();else{applyT();clearTimeout(camT);camT=setTimeout(()=>{if(!pinch&&!(pan&&pan.moved))commitCam();},700);}}
+function commitCam(){clearTimeout(camT);cam={...tcam};svg.setAttribute('viewBox',`${cam.x.toFixed(2)} ${cam.y.toFixed(2)} ${(vw()/cam.s).toFixed(2)} ${(vh()/cam.s).toFixed(2)}`);
+  svg.style.transform='';svg.style.willChange='';}
+function zoomAt(k,cx,cy){const r=wrap.getBoundingClientRect();const lx=(cx??r.left+r.width/2)-r.left,ly=(cy??r.top+r.height/2)-r.top;
+  const s=clamp(tcam.s*k,sMin(),sMax()),bx=lx/tcam.s+tcam.x,by=ly/tcam.s+tcam.y;return {s,x:bx-lx/s,y:by-ly/s};}
+function pinchStart(a,b){if(sel){select(null);renderWires();}rubber.setAttribute('display','none');
+  const r=wrap.getBoundingClientRect(),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
+  return {d:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),c0:{...tcam},bx:mx/tcam.s+tcam.x,by:my/tcam.s+tcam.y};}
+function pinchMove(P,a,b){const r=wrap.getBoundingClientRect(),mx=(a.x+b.x)/2-r.left,my=(a.y+b.y)/2-r.top;
+  const s=clamp(P.c0.s*Math.hypot(a.x-b.x,a.y-b.y)/P.d,sMin(),sMax());setCam({s,x:P.bx-mx/s,y:P.by-my/s});}
+function fit(){setCam({s:sFit(),x:0,y:0},true);}
+let wheelT=0;
+wrap.addEventListener('wheel',e=>{e.preventDefault();if(sel){select(null);renderWires();}
+  const dy=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?vh():1);
+  setCam(zoomAt(Math.exp(-clamp(dy,-120,120)*(e.ctrlKey?0.01:0.0018)),e.clientX,e.clientY));
+  clearTimeout(wheelT);wheelT=setTimeout(commitCam,160);},{passive:false});
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+let rsT=0;window.addEventListener('resize',()=>{clearTimeout(rsT);rsT=setTimeout(()=>setCam(tcam,true),80);});
 window.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();fit();}else if((e.key==='Delete'||e.key==='Backspace')&&sel)$('delBtn').onclick();else if(e.key==='Escape'){pending=null;updPending();select(null);renderWires();}});
 
 /* ===== 메뉴 ===== */
@@ -754,7 +766,7 @@ let confirmCmd=null;
 document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{const c=b.dataset.cmd;closeMenus();
   if(c.startsWith('ex:'))loadExample(c.slice(3));
   else if(c==='clearW'){if(!wires.length)return;wires=[];HIST.e=[];HIST.p=[];renderWires();save();flash('배선을 모두 지웠어요');}
-  else if(c==='zin')setZoom(zoom*1.3);else if(c==='zout')setZoom(zoom/1.3);else if(c==='zfit')fit();
+  else if(c==='zin')setCam(zoomAt(1.3),true);else if(c==='zout')setCam(zoomAt(1/1.3),true);else if(c==='zfit')fit();
   else if(c==='help')$('modal').classList.add('show');});
 $('reView').onclick=fit;$('closeHelp').onclick=()=>$('modal').classList.remove('show');
 $('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('show');};
