@@ -1,0 +1,17 @@
+{
+  "name": "공압실습실 시뮬레이터",
+  "short_name": "공압실습실",
+  "description": "전기·공압 배선 실습 시뮬레이터",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b1640",
+  "theme_color": "#0b1640",
+  "lang": "ko",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
