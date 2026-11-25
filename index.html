@@ -41,7 +41,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#15181d;font-family:-a
 #tools{display:flex;justify-content:center;background:#2a2e35;border-top:1px solid #444;position:relative;z-index:5}
 #tools .tb{flex:0 1 170px;text-align:center;padding:9px 6px;font-size:13px;color:#e6e6e6;background:linear-gradient(#5a5f67,#3f444b);border-left:1px solid #2a2e35;border-right:1px solid #2a2e35;cursor:pointer;white-space:nowrap}
 #tools .tb.open{background:linear-gradient(#6d86c9,#3d5aa8)}
-.pop{position:absolute;bottom:40px;background:#16234f;border:1px solid #33478a;border-radius:8px 8px 0 0;min-width:200px;display:none;z-index:20;box-shadow:0 -8px 24px #0008}
+.pop{position:absolute;bottom:40px;max-height:62vh;overflow:auto;background:#16234f;border:1px solid #33478a;border-radius:8px 8px 0 0;min-width:200px;display:none;z-index:20;box-shadow:0 -8px 24px #0008}
 .pop.show{display:block}
 .pop div{padding:11px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid #22336b}
 .pop div:hover{background:#24387a}
@@ -58,6 +58,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#15181d;font-family:-a
 #modal h3{margin:4px 0 8px}#modal li{margin-bottom:5px}
 #modal button{background:#3d5aa8;color:#fff;border:0;border-radius:8px;padding:8px 18px;font-size:14px;cursor:pointer}
 text{pointer-events:none}
+.cur{stroke-dasharray:7 7;animation:cur .45s linear infinite}@keyframes cur{to{stroke-dashoffset:-14}}
 [data-act]{cursor:pointer}
 .mv{cursor:grab}
 .hit{cursor:pointer}
@@ -77,11 +78,16 @@ text{pointer-events:none}
     <div data-cmd="ex:auto">예제 ② 센서로 연속 왕복 (양솔 밸브)</div>
     <div data-cmd="ex:timer">예제 ③ 전진 후 3초 뒤 자동 복귀 (타이머)</div>
     <div data-cmd="ex:count">예제 ④ 3회 왕복 후 정지 (카운터)</div>
+    <div data-cmd="ex:pneu">예제 ⑤ 공압만: 푸시버튼 밸브 2개 + 셔틀(OR) + 공압작동 5/2</div>
+    <div data-cmd="ex:mtb">예제 ⑥ 설비보전 예제1 — 기본 회로 (A+ A− 3초 B+ B−)</div>
+    <div data-cmd="ex:mt17">예제 ⑦ 예제1 유지보수 1) 3회 연속·카운터 리셋·램프1</div>
+    <div data-cmd="ex:mt28">예제 ⑧ 예제1 유지보수 2) LS2 정전용량형·LS4 유도형 센서</div>
+    <div data-cmd="ex:es31">예제 ⑨ 비상정지 회로 (ES1 + K1 복귀)</div>
     <div data-cmd="clearW">배선 전체 삭제</div>
     <div data-cmd="ex:reset">새 과제 (처음 상태)</div>
   </div>
   <div class="menu" id="mView" style="left:100px">
-    <div data-cmd="zin">확대 ＋</div><div data-cmd="zout">축소 －</div><div data-cmd="zfit">시점 복귀 (스페이스바)</div>
+    <div data-cmd="zin">확대 ＋</div><div data-cmd="zout">축소 －</div><div data-cmd="zfit">시점 복귀 (스페이스바)</div><div data-cmd="mute" id="muteItem">부저 소리 끄기</div>
   </div>
   <div class="menu" id="mEq" style="left:170px">
     <div data-cmd="help">사용법 · 모듈 설명</div>
@@ -97,15 +103,15 @@ text{pointer-events:none}
 </div>
 <div id="tools">
   <div class="tb" data-pop="pAct">작동기</div>
-  <div class="tb" data-pop="pDir">방향 제어 밸브</div>
-  <div class="tb" data-pop="pFlow">유량 제어 밸브</div>
-  <div class="tb" data-pop="pPres">압력 제어 밸브</div>
+  <div class="tb" data-pop="pSol">솔레노이드 작동 밸브</div>
+  <div class="tb" data-pop="pPn">공압작동밸브</div>
+  <div class="tb" data-pop="pFlow">유량 / 압력 제어 밸브</div>
   <div class="tb" data-pop="pSen">감지 센서</div>
   <div class="pop" id="pAct"><div data-add="cylDA">복동 실린더</div><div data-add="cylSA">단동 실린더 (스프링 복귀)</div></div>
-  <div class="pop" id="pDir"><div data-add="v52s">5/2 편솔레노이드 밸브</div><div data-add="v52d">5/2 양솔레노이드 밸브</div><div data-add="v32s">3/2 편솔레노이드 밸브 (NC)</div></div>
-  <div class="pop" id="pFlow"><div data-add="flow">일방향 유량 제어 밸브 (속도 조절)</div><div class="note">손잡이를 누를 때마다 열림 100→60→30→15%. 실린더에서 나가는(배기) 공기를 조여서 속도를 늦춰요.</div></div>
-  <div class="pop" id="pPres"><div data-add="gauge">압력 게이지</div><div class="note">공급 압력은 서비스 유닛 위 검은 레귤레이터 노브를 눌러 1~8 bar로 조절해요.</div></div>
-  <div class="pop" id="pSen"><div data-add="sensor" data-dir="L">리미트 스위치 — 왼쪽 레버 ◀</div><div data-add="sensor" data-dir="R">리미트 스위치 — 오른쪽 레버 ▶</div><div class="note">실린더 로드 끝(은색 머리)이 롤러에 닿으면 켜져요. 로드 끝을 손으로 잡아당겨 원하는 위치에 두고, 그 머리 아래에 롤러가 닿도록 스위치를 끌어다 놓으세요. C–NO: 닿으면 연결 / C–NC: 닿으면 끊김.</div></div>
+  <div class="pop" id="pSol"><div data-add="v52d">5/2-Way 양솔레노이드 밸브</div><div data-add="v52s">5/2-Way 편솔레노이드 밸브</div><div data-add="v32s">3/2-Way 편솔레노이드 밸브</div></div>
+  <div class="pop" id="pPn"><div data-add="mv32nc">3/2 공압작동스위치 (NC)</div><div data-add="mv32no">3/2 공압작동스위치 (NO)</div><div data-add="sv32nc">3/2W 선택스위치 작동 밸브 (NC)</div><div data-add="sv32no">3/2W 선택스위치 작동 밸브 (NO)</div><div data-add="pv52d">5/2 공압작동밸브 (공압 복귀)</div><div data-add="pv52s">5/2 공압작동밸브 (스프링 복귀)</div><div data-add="pv32nc">3/2 공압작동밸브 (NC)</div><div data-add="pv32no">3/2 공압작동밸브 (NO)</div><div data-add="and2">Two(And) 밸브</div><div data-add="shuttle">셔틀밸브 (OR)</div></div>
+  <div class="pop" id="pFlow"><div data-add="flow">일방향유량제어</div><div data-add="qev">급속배기밸브</div><div data-add="prv">감압밸브 (게이지 포함)</div><div data-add="gauge">압력 게이지</div><div class="note">유량제어: 손잡이를 누를 때마다 열림 100→60→30→15%. 1→2는 체크밸브로 자유 흐름, 2→1만 조여져요. 감압밸브: 검은 노브로 출구 압력 설정.</div></div>
+  <div class="pop" id="pSen"><div data-add="cap">정전용량형 센서</div><div data-add="ind">유도형 센서</div><div data-add="rl2">롤러레버 (양방향)</div><div data-add="rlL">롤러레버 (일방향_왼쪽)</div><div data-add="rlR">롤러레버 (일방향_오른쪽)</div><div data-add="sensor" data-dir="L">리미트 스위치 (Left)</div><div data-add="sensor" data-dir="R">리미트 스위치 (Right)</div><div class="note">근접센서: 빨강 24V, 파랑 0V, 검정 OUTPUT(감지되면 24V 출력). 롤러레버는 공압 3/2 밸브(P→A)예요. 일방향은 화살표 방향으로 지나갈 때만 동작해요.</div></div>
 </div>
 <div id="foot"><span class="brand">Virtual Pneumatic Trainer</span><span id="msg"></span></div>
 </div>
@@ -113,15 +119,20 @@ text{pointer-events:none}
 <h3>사용법</h3>
 <ul>
 <li><b>배선</b>: 단자를 누르고 → 연결할 단자를 누르면 선이 꽂혀요. (PC는 단자에서 단자로 끌어도 됨) 같은 단자를 다시 누르면 취소. 한 단자에 여러 선을 겹쳐 꽂을 수 있어요.</li>
+<li><b>전류 흐름 보기</b>: 전선 위에 마우스를 올리면(아이패드는 선을 톡) 그 선을 지나는 전류 경로가 노란 점선으로 흐르고, 아래 줄에 +24V → 접점 → 부하 → 0V 순서가 나와요. 배관은 공급/배기/막힘 상태를 알려 줘요.</li>
+<li><b>모듈 전원 연결</b>: 처음부터 POWER SUPPLY의 +24V·0V가 짧은 점퍼선으로 옆 모듈들에 차례로 이어져 있어요. 점퍼를 빼면 그 뒤 모듈은 전원이 끊겨요(실제 장비처럼). 단자에 마우스를 갖다 대면 초록 원으로 연결 가능 표시가 나와요.</li>
 <li><b>선 / 부품 지우기</b>: 선이나 추가한 부품을 누르면 🗑 삭제 버튼이 떠요. 오른쪽 <b>E</b> ↶ 는 마지막 전기 배선, <b>P</b> ↶ 는 마지막 공압 배관을 되돌려요.</li>
 <li><b>선 색</b>: 오른쪽 E 패널 색을 고르면 그 색으로 꽂혀요. 아무것도 안 고르면 +쪽은 빨강, 0V쪽은 파랑 자동.</li>
 <li><b>전원·공기</b>: POWER 스위치 ON → 서비스 유닛 오른쪽 <b>파란 손잡이</b>를 눌러 공기 열기. 검은 노브 = 압력 조절.</li>
-<li><b>SWITCH MODULE</b>: 버튼마다 접점 4개가 각각 <b>위 단자(들어감)–아래 단자(나감)</b> 한 쌍이에요. 왼쪽 2개 = a접점(NO, 13-14 / 23-24, 누르면 연결), 오른쪽 2개 = b접점(NC, 31-32 / 41-42, 누르면 끊김), 맨 오른쪽 = 버튼 램프(X1-X2). 버튼은 누르고 있는 동안만 ON.</li>
+<li><b>EMERGENCY SWITCH MODULE</b>: 빨간 버섯 버튼을 누르면 눌린 채로 잠겨요(비상정지). 다시 누르면 돌려서 해제돼요. 위 a접점(13-14)은 눌리면 연결, b접점(11-12)은 평소 연결이고 눌리면 끊겨요. 보통 b접점을 전체 회로 맨 앞에 직렬로 넣어요.</li>
+<li><b>SWITCH MODULE</b>: 버튼마다 접점 4개가 각각 <b>위 단자(들어감)–아래 단자(나감)</b> 한 쌍이에요. 왼쪽 2개 = a접점(NO, 13-14 / 23-24, 누르면 연결), 오른쪽 2개 = b접점(NC, 31-32 / 41-42, 누르면 끊김), 맨 오른쪽 = 버튼 램프(X1-X2). PB1·PB2·PB4·PB5(초록)는 누르고 있는 동안만 ON(자동복귀), PB3·PB6(빨강)은 누르면 눌린 채 유지되고 다시 누르면 OFF(수동복귀).</li>
 <li><b>RELAY MODULE</b>: 왼쪽 A1–A2가 코일. 접점 4묶음은 아래 단자가 공통(11), 위 왼쪽이 b접점(12), 위 오른쪽이 a접점(14). 코일 ON → 11–14 연결, 11–12 끊김.</li>
-<li><b>램프 모듈</b>: 검정 단자(+) – 파랑 단자. 같은 줄 파랑 단자 3개는 안에서 이어져 있으니 하나만 0V에 연결.</li>
+<li><b>램프·부저 모듈</b>: 검정 단자(+) – 파랑 단자. 같은 줄 파랑 단자는 안에서 이어져 있으니 하나만 0V에 연결. 부저는 켜지면 소리가 나요(보기 메뉴에서 끄기).</li>
+<li><b>공압작동밸브</b>: 푸시버튼 밸브는 누르고 있는 동안, 선택스위치는 누를 때마다 전환. 공압작동밸브는 파일럿 포트(12·14)에 공기가 들어오면 전환. 셔틀=OR(둘 중 하나), Two=AND(둘 다).</li>
+<li><b>감지 센서</b>: 근접센서는 로드 끝이 가까이 오면 OUTPUT으로 24V를 내보내요. 롤러레버는 로드 끝이 롤러를 누르면 P→A가 열리는 공압 밸브예요.</li>
 <li><b>DIGITAL TIME MODULE</b>: T1 = ON 딜레이(코일 ON 후 설정 시간 뒤 접점 전환), T2 = OFF 딜레이(코일 OFF 후 설정 시간 동안 유지). 접점은 왼쪽 2개 a, 오른쪽 2개 b. 화면 아래 ■■로 시간 −/＋.</li>
 <li><b>COUNTER MODULE</b>: A1–A2에 신호가 들어올 때마다 1씩 셈, R1–R2는 리셋. 위 숫자 = 설정값(▼▲), 아래 = 현재값. 설정값 도달 시 공통–1 끊김, 공통–2 연결.</li>
-<li><b>보기</b>: 두 손가락으로 확대/축소, 빈 곳을 끌면 화면 이동. PC는 마우스 휠로 확대/축소(커서 위치 기준). 스페이스바 = 시점 복귀.</li>
+<li><b>보기</b>: 두 손가락으로 확대/축소, 빈 곳을 끌면 화면 이동. PC는 마우스 휠로 확대/축소(커서 위치 기준), 빈 곳을 끌면 화면 이동. 스페이스바 = 시점 복귀.</li>
 <li><b>실린더 손으로 당기기</b>: 로드 끝(은색 머리)을 잡고 좌우로 끌면 실린더가 따라 움직여요. 리미트 스위치는 로드 끝이 롤러에 실제로 닿으면 켜지니까, 원하는 위치까지 당겨 놓고 그 머리 아래에 스위치 롤러가 닿게 놓으면 돼요. (공기를 닫아 두면 놓아도 그 자리에 있어요)</li>
 <li>+24V와 0V를 바로 이으면 단락으로 전원이 꺼져요. 복동 실린더는 A·B 두 포트를 모두 밸브에 연결해야 움직여요.</li>
 <li>배선은 이 브라우저에 자동 저장돼요. 오른쪽 위 <b>☁ 로그인</b>으로 구글 로그인하면 클라우드에도 저장돼서, 다른 기기에서 같은 계정으로 로그인하면 이어서 할 수 있어요.</li>
@@ -130,7 +141,7 @@ text{pointer-events:none}
 </div></div>
 <script>
 {
-const W=1600,H=860,NS='http://www.w3.org/2000/svg',KEY='pneusim_v2';
+const W=1900,H=860,NS='http://www.w3.org/2000/svg',KEY='pneusim_v2';
 const svg=document.getElementById('board');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
 const $=id=>document.getElementById(id);
 function el(t,a,p){const e=document.createElementNS(NS,t);if(a)for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
@@ -181,7 +192,7 @@ const L_bg=el('g',{},svg),L_parts=el('g',{},svg),L_wires=el('g',{},svg),L_mark=e
     el('rect',{x:0,y:y-10,width:W,height:20,fill:'url(#gRail)'},L_bg);el('rect',{x:0,y:y-10,width:W,height:20,fill:'url(#brush)'},L_bg);
     el('rect',{x:0,y:y-3,width:W,height:6,fill:'url(#gGroove)'},L_bg);
     ln(L_bg,0,y-10,W,y-10,'#fff',.8,{opacity:.6});ln(L_bg,0,y+10,W,y+10,'#2a2c30',1);ln(L_bg,0,y-3.5,W,y-3.5,'#eef0f2',.7,{opacity:.7});});
-  const T=272,B=H-6,lt=58,rt=1512;
+  const T=272,B=H-6,lt=58,rt=W-88;
   el('polygon',{points:`${lt-16},${T-4} ${rt+16},${T-4} ${W},${B+6} 0,${B+6}`,fill:'#2e3135'},L_bg);
   const n=17,yy=i=>T+(B-T)*(i/n)*(0.86+0.14*i/n),xl=y=>lt+(0-lt)*(y-T)/(B-T),xr=y=>rt+(W-rt)*(y-T)/(B-T);
   const band=(ya,yb,fill,inset)=>el('polygon',{points:`${xl(ya)+inset},${ya} ${xr(ya)-inset},${ya} ${xr(yb)-inset},${yb} ${xl(yb)+inset},${yb}`,fill},L_bg);
@@ -196,12 +207,17 @@ const L_bg=el('g',{},svg),L_parts=el('g',{},svg),L_wires=el('g',{},svg),L_mark=e
   ln(L_bg,lt-16,T-12,rt+16,T-12,'#fff',1,{opacity:.7});
 })();
 el('rect',{x:0,y:0,width:W,height:H,fill:'url(#topLight)'},L_top);el('rect',{x:0,y:0,width:W,height:H,fill:'url(#vign)'},L_top);
+const L_flow=el('g',{'pointer-events':'none'});svg.insertBefore(L_flow,L_mark);
 const rubber=el('path',{stroke:'#ffd400','stroke-width':3,'stroke-dasharray':'6 5',fill:'none',display:'none'},L_top);
 const L_sens=el('g',{},L_top);
+const hovRing=el('circle',{r:13,fill:'none',stroke:'#3cff8a','stroke-width':3,display:'none'},L_top);let hovTerm=null,hovMsg='';
+function showHov(id){hovTerm=id;if(!id||!TDEF[id]){hovTerm=null;hovRing.setAttribute('display','none');hovMsg='';return;}const q=termPos(id),pk=pending&&TDEF[pending]?TDEF[pending].t.kind:null,ok=!pk||pk===TDEF[id].t.kind;
+  hovRing.setAttribute('cx',q.x);hovRing.setAttribute('cy',q.y);hovRing.setAttribute('r',TDEF[id].t.r+5);hovRing.setAttribute('stroke',ok?'#3cff8a':'#ff4a4a');hovRing.setAttribute('display','');
+  hovMsg=ok?`🔌 ${termDesc(id)} — ${pending&&pending!==id?'눌러서 연결':'연결 가능한 단자'}`:`⛔ ${termDesc(id)} — 전기 단자와 공압 포트는 연결할 수 없어요`;}
 
 /* ===== 상태 ===== */
 const S={power:false,air:false,reg:5};
-let parts=[],wires=[],RT={},TDEF={},TERMEL={},WEL={},BUSP=[],BUSN=[];
+let parts=[],wires=[],RT={},TDEF={},TERMEL={},WEL={},BUSP=[],BUSN=[],BUSG={};
 let pending=null,curColor=null,hints=[],PST=()=>'B',PNET=()=>0,sel=null;
 const presses=new Map();const HIST={e:[],p:[]},REDO={e:[],p:[]};
 
@@ -244,22 +260,40 @@ TYPES.power={terms:busT,
     return {k,glow,hl};},
   render(p,rt){const r=rt.refs,on=S.power;setA(r.k,'fill',on?'#ff7520':'#9a3f12');setA(r.glow,'opacity',on?.8:0);setA(r.hl,'y',on?156:176);}
 };
+/* EMERGENCY SWITCH MODULE : 래치형 버섯 버튼 + a접점 1, b접점 1 */
+TYPES.estop={init:()=>({on:false}),
+  terms(){return busT().concat([{k:'a_t',x:55,y:62,col:'k',lab:'13'},{k:'a_b',x:55,y:104,col:'k',lab:'14'},{k:'b_t',x:127,y:62,col:'k',lab:'11'},{k:'b_b',x:127,y:104,col:'k',lab:'12'}]);},
+  draw(g){frame(g,'EMERGENCY SWITCH MODULE');const R={};
+    tx(g,55,49,'a접점 (NO)',{'font-size':6,'text-anchor':'middle',fill:'#0a7d2a','font-weight':700});tx(g,127,49,'b접점 (NC)',{'font-size':6,'text-anchor':'middle',fill:'#c01818','font-weight':700});
+    R.a=contactSym(g,55,62,104,false);R.b=contactSym(g,127,62,104,true);dash(g,30,150,83);tx(g,22,86,'E',{'font-size':10,fill:'#555'});
+    const b=el('g',{'data-act':'estop'},g);
+    el('circle',{cx:91,cy:170,r:40,fill:'#000',opacity:.25,transform:'translate(2,4)'},b);
+    el('circle',{cx:91,cy:170,r:40,fill:'#f2c200',stroke:'#7a6000'},b);el('circle',{cx:91,cy:170,r:33,fill:'#2a2a2a'},b);
+    R.cap=el('circle',{cx:91,cy:170,r:28,fill:'url(#gBtnR)',stroke:'#5a0000'},b);
+    el('path',{d:'M78 160 A16 16 0 0 1 104 160',fill:'none',stroke:'#fff','stroke-width':2.4,opacity:.85},b);el('polygon',{points:'104,154 108,163 99,162',fill:'#fff',opacity:.85},b);
+    el('path',{d:'M104 180 A16 16 0 0 1 78 180',fill:'none',stroke:'#fff','stroke-width':2.4,opacity:.85},b);el('polygon',{points:'78,186 74,177 83,178',fill:'#fff',opacity:.85},b);
+    R.t=tx(g,91,226,'',{'font-size':8,'text-anchor':'middle','font-weight':700});
+    return R;},
+  render(p,rt){const R=rt.refs,on=rt.on;setA(R.cap,'r',on?25:28);setA(R.cap,'opacity',on?.85:1);setT(R.t,on?'비상정지 (눌러서 해제)':'EMERGENCY STOP');setA(R.t,'fill',on?'#c01818':'#444');
+    setContact(R.a,55,62,104,false,on);setContact(R.b,127,62,104,true,!on);},
+  contacts:(p,rt)=>rt.on?[['a_t','a_b']]:[['b_t','b_b']]
+};
 /* SWITCH MODULE : 버튼 3개 × (a접점 2 + b접점 2 + 램프) */
 const SW_BY=[72,138,204],SW_T=[55,121,187],SW_B=[89,155,220],SW_CX=[67,94,121,148],SW_NUM=[['13','14'],['23','24'],['31','32'],['41','42']];
 TYPES.switch={init:()=>({st:[false,false,false]}),
   terms(){const a=busT();for(let r=0;r<3;r++){SW_CX.forEach((x,j)=>a.push({k:`b${r+1}_${j+1}t`,x,y:SW_T[r],col:'k',lab:SW_NUM[j][0]},{k:`b${r+1}_${j+1}b`,x,y:SW_B[r],col:'k',lab:SW_NUM[j][1]}));
     a.push({k:`b${r+1}_lt`,x:168,y:SW_T[r],col:'k',r:5.5,lab:'X1'},{k:`b${r+1}_lb`,x:168,y:SW_B[r],col:'k',r:5.5,lab:'X2'});}return a;},
-  draw(g){frame(g,'SWITCH MODULE');const R={bl:[],cap:[],halo:[]};
+  draw(g,p){frame(g,'SWITCH MODULE');const R={bl:[],cap:[],halo:[]};
     for(let r=0;r<3;r++){const mid=(SW_T[r]+SW_B[r])/2;
       tx(g,43,mid+3.5,'E',{'font-size':10,fill:'#555'});ln(g,49,mid,52,mid,'#777',1);dash(g,52,163,mid);
       R.bl[r]=SW_CX.map((x,j)=>contactSym(g,x,SW_T[r],SW_B[r],j>=2));if(r===0){tx(g,80.5,45,'a접점 (NO)',{'font-size':6,'text-anchor':'middle',fill:'#0a7d2a','font-weight':700});tx(g,134.5,45,'b접점 (NC)',{'font-size':6,'text-anchor':'middle',fill:'#c01818','font-weight':700});}cross(g,168,mid,4);
       const b=el('g',{'data-act':'btn:'+r},g);
-      R.halo[r]=el('circle',{cx:24,cy:SW_BY[r],r:19,fill:r?'url(#glG)':'url(#glR)',opacity:0},b);
+      R.halo[r]=el('circle',{cx:24,cy:SW_BY[r],r:19,fill:r===2?'url(#glR)':'url(#glG)',opacity:0},b);
       el('circle',{cx:24,cy:SW_BY[r],r:15.5,fill:'#202020'},b);
-      R.cap[r]=el('circle',{cx:24,cy:SW_BY[r],r:13,fill:r?'url(#gBtnG)':'url(#gBtnR)',stroke:'#0006'},b);
-      tx(g,24,SW_BY[r]+25,'PB'+(r+1),{'font-size':6.5,'text-anchor':'middle',fill:'#555','font-weight':700});}
+      R.cap[r]=el('circle',{cx:24,cy:SW_BY[r],r:13,fill:r===2?'url(#gBtnR)':'url(#gBtnG)',stroke:'#0006'},b);if(r===2)R.ring=el('circle',{cx:24,cy:SW_BY[r],r:16.5,fill:'none',stroke:'#ffcc00','stroke-width':2,opacity:0},b);
+}
     return R;},
-  render(p,rt){const R=rt.refs;for(let r=0;r<3;r++){const on=rt.st[r];setA(R.cap[r],'r',on?11:13);setA(R.cap[r],'opacity',on?.8:1);setA(R.halo[r],'opacity',rt.L['lamp'+r]?.85:0);
+  render(p,rt){const R=rt.refs;for(let r=0;r<3;r++){const on=rt.st[r];setA(R.cap[r],'r',on?11:13);setA(R.cap[r],'opacity',on?.8:1);if(r===2)setA(R.ring,'opacity',on?1:0);setA(R.halo[r],'opacity',rt.L['lamp'+r]?.85:0);
     SW_CX.forEach((x,j)=>setContact(R.bl[r][j],x,SW_T[r],SW_B[r],j>=2,j<2?on:!on));}},
   contacts(p,rt){const o=[];for(let r=0;r<3;r++){const on=rt.st[r];for(let j=0;j<4;j++)if(j<2?on:!on)o.push([`b${r+1}_${j+1}t`,`b${r+1}_${j+1}b`]);}return o;},
   loads:()=>[0,1,2].map(r=>({a:`b${r+1}_lt`,b:`b${r+1}_lb`,k:'lamp'+r}))
@@ -272,7 +306,6 @@ TYPES.relay={ks:p=>[0,1,2].map(i=>'k'+(p.base+i)),
   draw(g,p){frame(g,'RELAY MODULE');const R={box:{},bl:{}};
     this.ks(p).forEach((k,r)=>{const d=r*66;dash(g,31,170,71+d);
       R.box[k]=el('rect',{x:11,y:66+d,width:20,height:10,fill:'#cfcca0',stroke:'#555','stroke-width':.8},g);
-      tx(g,21,73.5+d,k.toUpperCase(),{'font-size':6,'text-anchor':'middle','font-weight':700,fill:'#222'});
       R.bl[k]=RL_TL.map(x=>{const bx=x+9.5;ln(g,x,52+d,x,61+d,'#333',1.1);ln(g,x+17.5,61+d,x+17.5,65+d,'#333',1.1);ln(g,bx,80+d,bx,77+d,'#333',1.1);
         return el('line',{x1:bx,y1:77+d,x2:x+1,y2:61+d,stroke:'#111','stroke-width':1.4,'stroke-linecap':'round'},g);});});
     return R;},
@@ -281,20 +314,31 @@ TYPES.relay={ks:p=>[0,1,2].map(i=>'k'+(p.base+i)),
   loads(p){return this.ks(p).map(k=>({a:k+'_a1',b:k+'_a2',k}));},
   contacts(p,rt){const o=[];this.ks(p).forEach(k=>{const on=rt.L[k];for(let n=1;n<=4;n++)o.push([`${k}_${n}c`,on?`${k}_${n}no`:`${k}_${n}nc`]);});return o;}
 };
-/* 램프 모듈 */
-const LM_X=[44,93,142],LM_W=[56,151],LM_K=[82,176],LM_X2=[98,192],LM_BL=[115,209];
-TYPES.lamp={terms(){const a=busT();for(let r=0;r<2;r++)LM_X.forEach((x,i)=>{const n=r*3+i+1;a.push({k:`l${n}_t`,x,y:LM_K[r],col:'k'},{k:`l${n}_b`,x,y:LM_BL[r],col:'b'});});return a;},
-  draw(g){frame(g,'');const R={w:[],h:[]};
-    for(let r=0;r<2;r++){ln(g,LM_X[0],LM_BL[r],LM_X[2],LM_BL[r],'#333',1.2);
-      LM_X.forEach((x,i)=>{const n=r*3+i;R.h[n]=el('circle',{cx:x,cy:LM_W[r],r:24,fill:'url(#glG)',opacity:0},g);
-        R.w[n]=el('rect',{x:x-12,y:LM_W[r]-12,width:24,height:24,rx:1.5,fill:'#b7d1a9',stroke:'#7d9672'},g);
-        tx(g,x,LM_W[r]+3,'L'+(n+1),{'font-size':7,'text-anchor':'middle',fill:'#5c7352'});
-        ln(g,x,LM_K[r]+7,x,LM_X2[r]-4,'#333',1);ln(g,x,LM_X2[r]+4,x,LM_BL[r]-7,'#333',1);cross(g,x,LM_X2[r],4);});}
+/* 램프·부저 모듈: 1줄 = 부저 + 흰색 램프 3, 2줄 = 빨강·초록·노랑 */
+const LM_X=[26,70,114,158],LM_W=[56,151],LM_K=[82,176],LM_X2=[98,192],LM_BL=[115,209];
+const LAMPS=[[1,0,1,'#f4f4ee','#ffffff'],[2,0,2,'#f4f4ee','#ffffff'],[3,0,3,'#f4f4ee','#ffffff'],[4,1,1,'#7a1f1a','#ff3b30'],[5,1,2,'#1d4a26','#3cff6a'],[6,1,3,'#5c5418','#ffe23a']];
+TYPES.lamp={init:()=>({}),
+  terms(){const a=busT();a.push({k:'bz_t',x:LM_X[0],y:LM_K[0],col:'k'},{k:'bz_b',x:LM_X[0],y:LM_BL[0],col:'b'});
+    LAMPS.forEach(([n,r,c])=>a.push({k:`l${n}_t`,x:LM_X[c],y:LM_K[r],col:'k'},{k:`l${n}_b`,x:LM_X[c],y:LM_BL[r],col:'b'}));return a;},
+  draw(g){frame(g,'LAMP & BUZZER MODULE');const R={w:[],h:[]};
+    ln(g,LM_X[0],LM_BL[0],LM_X[3],LM_BL[0],'#333',1.2);ln(g,LM_X[1],LM_BL[1],LM_X[3],LM_BL[1],'#333',1.2);
+    const x=LM_X[0],y=LM_W[0];el('rect',{x:x-12,y:y-12,width:24,height:24,rx:2,fill:'#2a2a2a'},g);
+    el('polygon',{points:`${x-7},${y-3} ${x-3},${y-3} ${x+2},${y-8} ${x+2},${y+8} ${x-3},${y+3} ${x-7},${y+3}`,fill:'#ddd'},g);
+    R.bzw=el('path',{d:`M${x+5} ${y-5} Q${x+9} ${y} ${x+5} ${y+5} M${x+8} ${y-8} Q${x+14} ${y} ${x+8} ${y+8}`,fill:'none',stroke:'#ffcc00','stroke-width':1.5,opacity:0},g);
+    ln(g,x,LM_K[0]+7,x,LM_BL[0]-7,'#333',1);
+    LAMPS.forEach(([n,r,c,off,on],i)=>{const x=LM_X[c],y=LM_W[r];R.h[i]=el('circle',{cx:x,cy:y,r:22,fill:i<3?'url(#glO)':(i===3?'url(#glR)':i===4?'url(#glG)':'url(#glO)'),opacity:0},g);
+      R.w[i]=el('rect',{x:x-11,y:y-11,width:22,height:22,rx:2,fill:off,stroke:'#555'},g);
+      ln(g,x,LM_K[r]+7,x,LM_X2[r]-4,'#333',1);ln(g,x,LM_X2[r]+4,x,LM_BL[r]-7,'#333',1);cross(g,x,LM_X2[r],4);});
     return R;},
-  render(p,rt){const R=rt.refs;for(let n=0;n<6;n++){const on=!!rt.L['l'+(n+1)];setA(R.w[n],'fill',on?'#c9ff8c':'#b7d1a9');setA(R.h[n],'opacity',on?.9:0);}},
-  loads:()=>[1,2,3,4,5,6].map(n=>({a:`l${n}_t`,b:`l${n}_b`,k:'l'+n})),
-  contacts:()=>[['l1_b','l2_b'],['l2_b','l3_b'],['l4_b','l5_b'],['l5_b','l6_b']]
+  render(p,rt){const R=rt.refs;LAMPS.forEach(([n,r,c,off,on],i)=>{const l=!!rt.L['l'+n];setA(R.w[i],'fill',l?on:off);setA(R.h[i],'opacity',l?.9:0);});
+    const bz=!!rt.L.bz,ph=bz&&(Math.floor(performance.now()/250)%2===0);setA(R.bzw,'opacity',ph?1:0);buzz(bz,ph);},
+  loads:()=>[{a:'bz_t',b:'bz_b',k:'bz'}].concat(LAMPS.map(([n])=>({a:`l${n}_t`,b:`l${n}_b`,k:'l'+n}))),
+  contacts:()=>[['bz_b','l1_b'],['l1_b','l2_b'],['l2_b','l3_b'],['l4_b','l5_b'],['l5_b','l6_b']]
 };
+let AC=null,OSC=null,GAIN=null,buzzMute=false;
+document.addEventListener('pointerdown',()=>{try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){}},true);
+function buzz(on,ph){try{if(on&&!buzzMute&&AC){if(!OSC){OSC=AC.createOscillator();GAIN=AC.createGain();OSC.type='square';OSC.frequency.value=2300;GAIN.gain.value=0;OSC.connect(GAIN);GAIN.connect(AC.destination);OSC.start();}
+  GAIN.gain.value=ph?0.035:0;}else if(OSC){OSC.stop();OSC.disconnect();OSC=null;GAIN=null;}}catch(e){}}
 /* DIGITAL TIME MODULE : T1 ON딜레이, T2 OFF딜레이 */
 const TM_CX=[42,71,98,125];
 TYPES.timer={init:()=>({e:[0,0],out:[false,false]}),
@@ -304,7 +348,6 @@ TYPES.timer={init:()=>({e:[0,0],out:[false,false]}),
     for(let r=0;r<2;r++){const d=r*92;dash(g,31,132,88+d);
       R.box[r]=el('rect',{x:12,y:84+d,width:18,height:9,fill:'#fff',stroke:'#444','stroke-width':.8},g);
       if(r===0){ln(g,12,84,30,93,'#444',.8);ln(g,12,93,30,84,'#444',.8);}else el('rect',{x:12,y:84+d,width:9,height:9,fill:'#333'},g);
-      tx(g,4,96+d,'T'+(r+1),{'font-size':5.5,fill:'#444','font-weight':700});
       R.bl[r]=TM_CX.map((x,j)=>contactSym(g,x,62+d,114+d,j>=2));if(r===0){tx(g,56.5,47,'a (NO)',{'font-size':6,'text-anchor':'middle',fill:'#0a7d2a','font-weight':700});tx(g,111.5,47,'b (NC)',{'font-size':6,'text-anchor':'middle',fill:'#c01818','font-weight':700});}
       el('rect',{x:139,y:71+d,width:36,height:32,rx:2,fill:'#2b0b0b',stroke:'#111'},g);
       R.d[r]=tx(g,157,94+d,'00',{'font-size':19,'text-anchor':'middle',fill:'#ff4433','font-family':'Menlo,Consolas,monospace'});
@@ -325,13 +368,13 @@ TYPES.timer={init:()=>({e:[0,0],out:[false,false]}),
 /* COUNTER MODULE */
 TYPES.counter={init:()=>({n:0,prev:false}),
   terms:()=>busT().concat([{k:'c_a1',x:23,y:63,col:'k',lab:'A1'},{k:'c_a2',x:23,y:106,col:'k',lab:'A2'},{k:'c_r1',x:161,y:63,col:'k',lab:'R1'},{k:'c_r2',x:161,y:106,col:'k',lab:'R2'},
-    {k:'c_com',x:93,y:62,col:'k',lab:'COM'},{k:'c_1',x:74,y:108,col:'k',lab:'1'},{k:'c_2',x:108,y:108,col:'k',lab:'2'}]),
+    {k:'c_com',x:66,y:62,col:'k',lab:'COM'},{k:'c_1',x:49,y:108,col:'k',lab:'1'},{k:'c_2',x:83,y:108,col:'k',lab:'2'},{k:'c_com2',x:120,y:62,col:'k',lab:'COM'},{k:'c_21',x:103,y:108,col:'k',lab:'1'},{k:'c_22',x:137,y:108,col:'k',lab:'2'}]),
   draw(g){frame(g,'COUNTER MODULE');const R={};dash(g,33,151,86);
     R.ca=el('rect',{x:13,y:81,width:20,height:10,fill:'#fff',stroke:'#444','stroke-width':.8},g);ln(g,23,70,23,81,'#333');ln(g,23,91,23,99,'#333');
     R.cr=el('rect',{x:151,y:81,width:20,height:10,fill:'#fff',stroke:'#444','stroke-width':.8},g);ln(g,161,70,161,81,'#333');ln(g,161,91,161,99,'#333');
     tx(g,161,89,'R',{'font-size':6,'text-anchor':'middle'});
-    ln(g,93,70,93,80,'#333',1.1);ln(g,74,100,74,95,'#333',1.1);ln(g,108,100,108,95,'#333',1.1);ln(g,74,95,80,95,'#333',1.1);
-    R.bl=el('line',{x1:93,y1:80,x2:80,y2:95,stroke:'#111','stroke-width':1.4,'stroke-linecap':'round'},g);
+    R.bl=[66,120].map(cx=>{const l=cx-17,r=cx+17;ln(g,cx,70,cx,80,'#333',1.1);ln(g,l,100,l,95,'#333',1.1);ln(g,r,100,r,95,'#333',1.1);ln(g,l,95,l+6,95,'#333',1.1);
+      return el('line',{x1:cx,y1:80,x2:l+6,y2:95,stroke:'#111','stroke-width':1.4,'stroke-linecap':'round'},g);});
     [[155,'SET','set'],[194,'CNT','cnt']].forEach(([y,l,k])=>{el('rect',{x:56,y:y-15,width:70,height:30,rx:2,fill:'#2b0b0b',stroke:'#111'},g);
       R[k]=tx(g,120,y+8,'00',{'font-size':20,'text-anchor':'end',fill:'#ff4433','font-family':'Menlo,Consolas,monospace'});tx(g,52,y+3,l,{'font-size':6,'text-anchor':'end',fill:'#555'});});
     [[67,'cset:-1','▼'],[80,'creset','■'],[100,'creset','■'],[113,'cset:1','▲']].forEach(([x,a,ch])=>{const b=el('g',{'data-act':a},g);el('rect',{x:x-7,y:213,width:14,height:16,fill:'transparent'},b);
@@ -339,9 +382,9 @@ TYPES.counter={init:()=>({n:0,prev:false}),
     return R;},
   afterLoads(p,rt){p.preset=p.preset||3;const c=!!rt.L.cnt;if(rt.L.rst)rt.n=0;else if(c&&!rt.prev)rt.n=Math.min(99,rt.n+1);rt.prev=c;},
   render(p,rt){const R=rt.refs,up=rt.n>=p.preset;setT(R.set,String(p.preset).padStart(2,'0'));setT(R.cnt,String(rt.n).padStart(2,'0'));setA(R.cnt,'fill',up?'#45ff6a':'#ff4433');
-    setA(R.ca,'fill',rt.L.cnt?'#ffe74a':'#fff');setA(R.cr,'fill',rt.L.rst?'#ffe74a':'#fff');setA(R.bl,'x2',up?106:80);setA(R.bl,'y2',up?99:95);setA(R.bl,'stroke',up?'#0a7d2a':'#111');},
+    setA(R.ca,'fill',rt.L.cnt?'#ffe74a':'#fff');setA(R.cr,'fill',rt.L.rst?'#ffe74a':'#fff');R.bl.forEach((b,i)=>{const cx=[66,120][i];setA(b,'x2',up?cx+15:cx-11);setA(b,'y2',up?99:95);setA(b,'stroke',up?'#0a7d2a':'#111');});},
   loads:()=>[{a:'c_a1',b:'c_a2',k:'cnt'},{a:'c_r1',b:'c_r2',k:'rst'}],
-  contacts:(p,rt)=>[['c_com',rt.n>=(p.preset||3)?'c_2':'c_1']]
+  contacts:(p,rt)=>{const up=rt.n>=(p.preset||3);return [['c_com',up?'c_2':'c_1'],['c_com2',up?'c_22':'c_21']];}
 };
 
 /* ===== 보드 부품 ===== */
@@ -462,13 +505,17 @@ function drawSym(g,kind,x0,y0){const q=14,sq=[];const G=el('g',{},g);
   return sq;}
 for(const k in VC)TYPES[k]=valveType(k);
 
-TYPES.flow={w:76,h:52,movable:true,deletable:true,name:'유량 제어 밸브',init:()=>({}),
-  terms:()=>[{k:'1',x:10,y:30,kind:'p'},{k:'2',x:66,y:30,kind:'p'}],
-  draw(g,p){el('rect',{x:0,y:0,width:76,height:52,fill:'transparent'},g);el('rect',{x:2,y:14,width:72,height:34,rx:5,fill:'url(#gMetalD)',stroke:'#8d9298',fill:'#000',opacity:.28,stroke:'none',transform:'translate(3,6)'},g);el('rect',{x:2,y:14,width:72,height:34,rx:5,fill:'url(#gMetalD)',stroke:'#8d9298'},g);
-    const b=el('g',{'data-act':'thr'},g);el('rect',{x:28,y:0,width:20,height:22,rx:3,fill:'url(#gDark)'},b);ln(b,38,2,38,9,'#ddd',1.5);
-    const t=tx(g,38,44,'',{'font-size':7.5,'text-anchor':'middle','font-weight':700,fill:'#222'});tx(g,10,48,'1',{'font-size':6});tx(g,63,48,'2',{'font-size':6});return {t};},
+TYPES.flow={w:96,h:62,movable:true,deletable:true,name:'일방향유량제어',init:()=>({}),
+  terms:()=>[{k:'1',x:8,y:40,kind:'p'},{k:'2',x:88,y:40,kind:'p'}],
+  draw(g,p){el('rect',{x:0,y:0,width:96,height:62,fill:'transparent'},g);vbody(g,14,20,68,40);
+    const b=el('g',{'data-act':'thr'},g);el('rect',{x:38,y:0,width:20,height:24,rx:3,fill:'url(#gDark)'},b);ln(b,48,3,48,10,'#ddd',1.5);
+    el('rect',{x:30,y:28,width:36,height:20,fill:'#fff',stroke:'#333','stroke-width':.8},g);
+    el('path',{d:'M42 30 Q48 36 42 42 M54 30 Q48 36 54 42',fill:'none',stroke:'#333','stroke-width':.8},g);ln(g,40,44,56,30,'#333',.8);
+    el('circle',{cx:48,cy:45,r:2,fill:'none',stroke:'#333','stroke-width':.7},g);
+    const t=tx(g,48,57,'',{'font-size':7,'text-anchor':'middle','font-weight':700,fill:'#222'});plab(g,20,34,'1');plab(g,76,34,'2');
+    tx(g,24,54,'1→2 자유',{'font-size':5,fill:'#666'});return {t};},
   render(p,rt){setT(rt.refs.t,(p.thr||100)+'%');},
-  pneu(p,rt,U,SRC,EXH,THR){U('1','2');THR('1',(p.thr||100)/100);}
+  pneu(p,rt,U,SRC,EXH,THR,FC){FC('1','2',(p.thr||100)/100);}
 };
 TYPES.gauge={w:56,h:66,movable:true,deletable:true,name:'압력 게이지',init:()=>({pv:0}),
   terms:()=>[{k:'g',x:28,y:58,kind:'p'}],
@@ -503,6 +550,136 @@ TYPES.sensor={w:58,h:80,movable:true,deletable:true,name:'리미트 스위치',n
   contacts:(p,rt)=>[['c',rt.hit?'no':'nc']]
 };
 
+
+/* ===== 공압 부품 공통 ===== */
+function vbody(g,x,y,w,h){el('rect',{x:x+3,y:y+6,width:w,height:h,rx:6,fill:'#000',opacity:.28},g);el('rect',{x,y,width:w,height:h,rx:6,fill:'url(#gMetalD)',stroke:'#8d9399','stroke-width':1.3},g);
+  el('rect',{x,y,width:w,height:h,rx:6,fill:'url(#brush)'},g);ln(g,x+4,y+1.5,x+w-4,y+1.5,'#fff',1.1);}
+function brass(g,x,y,lab){el('polygon',{points:hex(x,y,6),fill:'url(#gBrass)',stroke:'#6a4c0c','stroke-width':.6},g);el('circle',{cx:x,cy:y,r:2.4,fill:'#7a5a12'},g);if(lab)tx(g,x+9,y+3,lab,{'font-size':7,'font-weight':700,fill:'#333'});}
+function plab(g,x,y,t){tx(g,x,y,t,{'font-size':8,'font-weight':800,fill:'#1a1a1a','text-anchor':'middle'});}
+/* ISO 기호: cells = 칸 종류, left/right = 조작 방식 */
+function isoSym(g,x0,y0,cells,left,right){const q=13,G=el('g',{},g),sq=[];
+  const A=(x1,y1,x2,y2)=>{ln(G,x1,y1,x2,y2,'#222',.8);const a=Math.atan2(y2-y1,x2-x1);el('polygon',{points:`${x2},${y2} ${x2-3*Math.cos(a-.5)},${y2-3*Math.sin(a-.5)} ${x2-3*Math.cos(a+.5)},${y2-3*Math.sin(a+.5)}`,fill:'#222'},G);};
+  const tee=(x,y,up)=>{ln(G,x,y,x,y+(up?-4:4),'#222',.8);ln(G,x-2.5,y+(up?-4:4),x+2.5,y+(up?-4:4),'#222',.9);};
+  cells.forEach((c,i)=>{const x=x0+i*q;sq.push(el('rect',{x,y:y0,width:q,height:q,fill:'#fff',stroke:'#333','stroke-width':.8},G));
+    if(c==='PA'){A(x+4,y0+q,x+4,y0);tee(x+9.5,y0+q,true);}
+    else if(c==='AR'){A(x+4,y0,x+9.5,y0+q);tee(x+4,y0+q,true);}
+    else if(c==='X'){A(x+3,y0+q,x+10,y0);A(x+10,y0+q,x+3,y0+.01);}
+    else if(c==='S'){A(x+3,y0+q,x+3,y0);A(x+10,y0,x+10,y0+q);}});
+  const L=x0,Rx=x0+cells.length*q,m=y0+q/2;
+  const act=(k,x,dir)=>{const o=dir<0?-1:1,e=dir<0?x-6:x;
+    if(k==='sol'){el('rect',{x:e,y:y0+3,width:6,height:7,fill:'#fff',stroke:'#333','stroke-width':.8},G);ln(G,e,y0+10,e+6,y0+3,'#333',.7);}
+    else if(k==='spring'){let s='';for(let i=0;i<=6;i++)s+=`${x+o*i*1.4},${y0+(i%2?3:10)} `;el('polyline',{points:s,fill:'none',stroke:'#333','stroke-width':.8},G);}
+    else if(k==='pilot'){ln(G,x,m,x+o*6,m,'#333',.8,{'stroke-dasharray':'1.5 1'});el('polygon',{points:`${x},${m} ${x+o*4},${m-2.5} ${x+o*4},${m+2.5}`,fill:'#333'},G);}
+    else if(k==='pb'){ln(G,x,m,x+o*5,m,'#333',.9);ln(G,x+o*5,m-4,x+o*5,m+4,'#333',1.1);}
+    else if(k==='sel'){ln(G,x,m,x+o*5,m,'#333',.9);ln(G,x+o*5,m-4,x+o*7,m+4,'#333',1);ln(G,x+o*3,m-3,x+o*3,m+3,'#333',.7);}
+    else if(k==='roller'||k==='rollerL'||k==='rollerR'){ln(G,x,m,x+o*4,m,'#333',.9);el('circle',{cx:x+o*6.5,cy:m,r:2.5,fill:'none',stroke:'#333','stroke-width':.8},G);
+      if(k!=='roller'){ln(G,x+o*4,m+3,x+o*8,m-4,'#333',.7);}}};
+  if(left)act(left,L,-1);if(right)act(right,Rx,1);return sq;}
+function rodEnd(c){const ex=c.x+306+RT[c.id].pos*232;return {x0:ex-8,x1:ex+46,y0:c.y+9,y1:c.y+49};}
+function cylNear(px,py,mx,my){for(const c of parts){if(!TYPES[c.type].cyl||!RT[c.id])continue;const r=rodEnd(c);
+  if(px>=r.x0-mx&&px<=r.x1+mx&&py>=r.y0-my&&py<=r.y1+my)return c;}return null;}
+
+/* 3/2 밸브 (푸시버튼·선택스위치·파일럿·롤러) */
+const V3={mv32nc:['3/2 공압작동스위치(NC)','pb',true,'Push Button Valve'],mv32no:['3/2 공압작동스위치(NO)','pb',false,'Push Button Valve'],
+  sv32nc:['3/2W 선택스위치 작동 밸브(NC)','sel',true,'Selector Switch Valve'],sv32no:['3/2W 선택스위치 작동 밸브(NO)','sel',false,'Selector Switch Valve'],
+  pv32nc:['3/2 공압작동밸브(NC)','pilot',true,'Pneumatic Valve'],pv32no:['3/2 공압작동밸브(NO)','pilot',false,'Pneumatic Valve'],
+  rl2:['롤러레버','roller',true,'Roller Lever Valve'],rlL:['롤러레버(일방향_왼쪽)','rollerL',true,'Roller Lever (One-way Left)'],rlR:['롤러레버(일방향_오른쪽)','rollerR',true,'Roller Lever (One-way Right)']};
+function v3Type(kind){const [name,act,nc,en]=V3[kind],roll=act.startsWith('roller');return{w:112,h:110,movable:true,deletable:true,name,init:()=>({on:false}),
+  terms:()=>{const a=[{k:'A',x:74,y:16,kind:'p'},{k:'P',x:58,y:100,kind:'p'}];if(act==='pilot')a.push({k:'12',x:9,y:56,kind:'p',r:7});return a;},
+  draw(g,p){el('rect',{x:0,y:0,width:112,height:110,fill:'transparent'},g);vbody(g,20,16,88,84);
+    tx(g,26,26,'◆ '+p.label,{'font-size':6.5,fill:'#556','font-weight':700});
+    plab(g,88,30,'A');plab(g,74,92,'P');brass(g,88,100,'R');
+    const R={};
+    if(act==='pb'){const b=el('g',{'data-act':'mvbtn'},g);el('rect',{x:8,y:48,width:14,height:16,rx:2,fill:'url(#gDark)'},b);
+      R.cap=el('circle',{cx:9,cy:56,r:10,fill:nc?'url(#gBtnG)':'url(#gBtnR)',stroke:'#0006'},b);}
+    else if(act==='sel'){const b=el('g',{'data-act':'mvsel'},g);el('rect',{x:8,y:48,width:14,height:16,rx:2,fill:'url(#gDark)'},b);
+      R.knob=el('g',{transform:'translate(10,56) rotate(-35)'},b);el('circle',{cx:0,cy:0,r:10,fill:'#1d1d1d'},R.knob);el('rect',{x:-2.5,y:-10,width:5,height:20,rx:2,fill:'#3a3a3a'},R.knob);el('circle',{cx:0,cy:-7,r:1.4,fill:'#fff'},R.knob);}
+    else if(act==='pilot'){plab(g,9,44,'12');}
+    else if(roll){const lv=el('g',{},g);el('line',{x1:52,y1:16,x2:40,y2:4,stroke:'#c9ccd0','stroke-width':4,'stroke-linecap':'round'},lv);
+      el('circle',{cx:40,cy:4,r:6,fill:'#222',stroke:'#555','stroke-width':1.5},lv);el('circle',{cx:40,cy:4,r:2,fill:'#888'},lv);R.lever=lv;
+      if(act!=='roller')tx(g,30,14,act==='rollerL'?'←':'→',{'font-size':10,'font-weight':800,fill:'#c01818','text-anchor':'middle'});}
+    R.sq=isoSym(g,52,40,nc?['PA','AR']:['AR','PA'],act==='roller'||roll?act:act,'spring');
+    tx(g,64,66,en,{'font-size':5.5,'text-anchor':'middle',fill:'#666'});tx(g,64,74,'3/2 '+(nc?'NC':'NO'),{'font-size':6,'text-anchor':'middle',fill:'#444','font-weight':700});
+    R.led=el('circle',{cx:100,cy:24,r:3,fill:'#334'},g);
+    return R;},
+  update(p,rt){if(roll){const c=cylNear(p.x+40,p.y+4,6,6);let on=!!c;if(on&&act!=='roller'){const v=RT[c.id].v||0;on=act==='rollerL'?v<-0.01:v>0.01;}rt.on=on;rt.touch=!!c;}
+    else if(act==='pilot')rt.on=PST(p.id+'.12')==='P';},
+  render(p,rt){const R=rt.refs;R.sq.forEach((e,i)=>{const on=(i===0)===rt.on;setA(e,'fill',on?'#cfe6ff':'#fff');setA(e,'stroke',on?'#1f62c9':'#333');});
+    if(R.cap){setA(R.cap,'r',rt.on?8.5:10);}if(R.knob)setA(R.knob,'transform',`translate(10,56) rotate(${rt.on?35:-35})`);
+    if(R.lever)setA(R.lever,'transform',rt.touch?'rotate(18 52 16)':'');setA(R.led,'fill',rt.on?'#ffb020':'#334');},
+  pneu(p,rt,U,SRC,EXH){const open=nc?rt.on:!rt.on;open?U('P','A'):EXH('A');}
+};}
+for(const k in V3)TYPES[k]=v3Type(k);
+
+/* 5/2 공압작동밸브: 스프링 복귀(14) / 공압 복귀(14·12) */
+function pv52Type(dbl){return{w:160,h:108,movable:true,deletable:true,name:dbl?'5/2 공압작동밸브(공압 복귀)':'5/2 공압작동밸브(스프링 복귀)',init:()=>({pos:'b'}),
+  terms:()=>{const a=[{k:'A',x:64,y:14,kind:'p'},{k:'B',x:96,y:14,kind:'p'},{k:'P',x:80,y:98,kind:'p'},{k:'14',x:9,y:56,kind:'p',r:7}];if(dbl)a.push({k:'12',x:151,y:56,kind:'p',r:7});return a;},
+  draw(g,p){el('rect',{x:0,y:0,width:160,height:108,fill:'transparent'},g);vbody(g,18,14,124,84);
+    tx(g,24,24,'◆ '+p.label,{'font-size':6.5,fill:'#556','font-weight':700});plab(g,64,36,'A');plab(g,96,36,'B');plab(g,80,88,'P');brass(g,56,98,'');brass(g,104,98,'');
+    plab(g,9,44,'14');if(dbl)plab(g,151,44,'12');
+    const sq=isoSym(g,67,44,['X','S'],'pilot',dbl?'pilot':'spring');
+    tx(g,80,70,'5/2-Way '+(dbl?'Double':'Single')+' Pneumatic Valve',{'font-size':5.5,'text-anchor':'middle',fill:'#666'});
+    return {sq};},
+  update(p,rt){const z=PST(p.id+'.14')==='P',y=dbl&&PST(p.id+'.12')==='P';if(dbl){if(z&&!y)rt.pos='a';else if(y&&!z)rt.pos='b';}else rt.pos=z?'a':'b';},
+  render(p,rt){rt.refs.sq.forEach((e,i)=>{const on=(i===0)===(rt.pos==='a');setA(e,'fill',on?'#cfe6ff':'#fff');setA(e,'stroke',on?'#1f62c9':'#333');});},
+  pneu(p,rt,U,SRC,EXH){if(rt.pos==='a'){U('P','A');EXH('B');}else{U('P','B');EXH('A');}}
+};}
+TYPES.pv52s=pv52Type(false);TYPES.pv52d=pv52Type(true);
+
+/* 논리 밸브: 셔틀(OR), Two(AND) */
+function logicType(and){return{w:120,h:64,movable:true,deletable:true,name:and?'Two(And) 밸브':'셔틀밸브(OR)',init:()=>({last:'X'}),
+  terms:()=>[{k:'X',x:8,y:40,kind:'p'},{k:'Y',x:112,y:40,kind:'p'},{k:'A',x:60,y:10,kind:'p'}],
+  draw(g,p){el('rect',{x:0,y:0,width:120,height:64,fill:'transparent'},g);vbody(g,14,18,92,44);
+    tx(g,60,57,and?'Two Valve (AND)':'Shuttle Valve (OR)',{'font-size':6.5,'text-anchor':'middle',fill:'#333','font-weight':700});
+    plab(g,22,32,'1');plab(g,98,32,'1');plab(g,72,30,'2');
+    el('rect',{x:40,y:34,width:40,height:12,fill:'#fff',stroke:'#333','stroke-width':.8},g);
+    if(and){ln(g,48,34,48,46,'#333',.8);ln(g,72,34,72,46,'#333',.8);el('rect',{x:52,y:37,width:16,height:6,fill:'none',stroke:'#333','stroke-width':.8},g);}
+    else{ln(g,44,46,48,34,'#333',.8);ln(g,76,46,72,34,'#333',.8);}
+    const ball=el('circle',{cx:60,cy:40,r:3.5,fill:'#333'},g);return {ball};},
+  render(p,rt){setA(rt.refs.ball,'cx',rt.last==='X'?(and?56:66):(and?64:54));},
+  pneu(p,rt,U){const x=PST(p.id+'.X')==='P',y=PST(p.id+'.Y')==='P';
+    if(and){if(x&&y)U('A','Y');else if(x){U('A','Y');rt.last='Y';}else if(y){U('A','X');rt.last='X';}else U('A',rt.last);}
+    else{if(x&&!y){U('A','X');rt.last='X';}else if(y&&!x){U('A','Y');rt.last='Y';}else U('A',rt.last);}}
+};}
+TYPES.and2=logicType(true);TYPES.shuttle=logicType(false);
+
+/* 급속배기밸브: P(1) → A(2), P 압력이 빠지면 A를 R(3)로 바로 배기 */
+TYPES.qev={w:112,h:64,movable:true,deletable:true,name:'급속배기밸브',init:()=>({}),
+  terms:()=>[{k:'P',x:8,y:40,kind:'p'},{k:'A',x:56,y:10,kind:'p'}],
+  draw(g,p){el('rect',{x:0,y:0,width:112,height:64,fill:'transparent'},g);vbody(g,14,18,84,44);brass(g,102,40,'');
+    tx(g,56,57,'Quick Exhaust Valve',{'font-size':6.5,'text-anchor':'middle',fill:'#333','font-weight':700});plab(g,24,32,'P');plab(g,68,30,'A');plab(g,92,32,'R');
+    el('rect',{x:38,y:34,width:36,height:12,fill:'#fff',stroke:'#333','stroke-width':.8},g);const ball=el('circle',{cx:50,cy:40,r:3.5,fill:'#333'},g);return {ball};},
+  render(p,rt){setA(rt.refs.ball,'cx',PST(p.id+'.P')==='P'?62:46);},
+  pneu(p,rt,U,SRC,EXH,THR){if(PST(p.id+'.P')==='P')U('P','A');else{EXH('A');THR('A',1.8);}}
+};
+/* 감압밸브 (출구 압력 설정 + 게이지) */
+TYPES.prv={w:124,h:96,movable:true,deletable:true,name:'감압밸브',init:()=>({pv:0}),
+  terms:()=>[{k:'1',x:8,y:70,kind:'p'},{k:'2',x:116,y:70,kind:'p'}],
+  draw(g,p){el('rect',{x:0,y:0,width:124,height:96,fill:'transparent'},g);vbody(g,14,50,96,40);
+    const kb=el('g',{'data-act':'prvset'},g);el('rect',{x:24,y:14,width:30,height:38,rx:5,fill:'url(#gDark)'},kb);for(let i=0;i<4;i++)ln(kb,29+i*7,18,29+i*7,48,'#000',1);
+    el('circle',{cx:88,cy:30,r:22,fill:'url(#gMetal)'},g);el('circle',{cx:88,cy:30,r:18,fill:'#fff',stroke:'#333'},g);
+    for(let v=0;v<=10;v+=2){const a=(-135+v*27)*Math.PI/180;ln(g,88+Math.sin(a)*13,30-Math.cos(a)*13,88+Math.sin(a)*17,30-Math.cos(a)*17,'#333',1);}
+    const n=el('line',{x1:0,y1:3,x2:0,y2:-14,stroke:'#c00','stroke-width':1.6,transform:'translate(88,30) rotate(-135)'},g);
+    const t=tx(g,62,84,'',{'font-size':7,'text-anchor':'middle','font-weight':700,fill:'#222'});tx(g,62,64,'Pressure Reducing',{'font-size':5.5,'text-anchor':'middle',fill:'#666'});
+    plab(g,20,62,'1');plab(g,104,62,'2');return {n,t};},
+  render(p,rt){p.set=p.set||3;const tgt=PNET(p.id+'.2');rt.pv+=(tgt-rt.pv)*.15;setA(rt.refs.n,'transform',`translate(88,30) rotate(${(-135+rt.pv*27).toFixed(1)})`);setT(rt.refs.t,`설정 ${p.set} bar`);},
+  pneu(p,rt,U,SRC,EXH){p.set=p.set||3;const st=PST(p.id+'.1');if(st==='P')SRC('2',Math.min(p.set,PNET(p.id+'.1')||S.reg));else if(st==='E')EXH('2');}
+};
+/* 근접 센서 (정전용량형 / 유도형) : 24V, OUTPUT, 0V */
+function proxType(cap){return{w:70,h:74,movable:true,deletable:true,name:cap?'정전용량형 센서':'유도형 센서',init:()=>({det:false}),
+  terms:()=>[{k:'pp',x:14,y:62,col:'r',pol:'+',r:6},{k:'out',x:35,y:62,col:'k',r:6},{k:'nn',x:56,y:62,col:'b',pol:'-',r:6}],
+  draw(g,p){el('rect',{x:0,y:0,width:70,height:74,fill:'transparent'},g);el('rect',{x:27,y:0,width:16,height:16,rx:2,fill:'url(#gMetal)',stroke:'#777'},g);
+    el('rect',{x:29,y:-2,width:12,height:3,fill:cap?'#d8c06a':'#9aa0a6'},g);
+    vbody(g,4,14,62,60);tx(g,35,30,cap?'Capacitive sensor':'Inductive sensor',{'font-size':5.5,'text-anchor':'middle',fill:'#333','font-weight':700});
+    tx(g,14,52,'24V',{'font-size':5.5,'text-anchor':'middle'});tx(g,35,52,'OUTPUT',{'font-size':5.5,'text-anchor':'middle'});tx(g,56,52,'0V',{'font-size':5.5,'text-anchor':'middle'});
+    const led=el('circle',{cx:35,cy:40,r:3.5,fill:'#1a3a1a',stroke:'#000'},g);tx(g,10,24,p.label,{'font-size':6,fill:'#556','font-weight':700});return {led};},
+  update(p,rt){rt.det=!!cylNear(p.x+35,p.y,4,14);},
+  render(p,rt){setA(rt.refs.led,'fill',rt.det&&rt.L.pw?'#3cff6a':rt.det?'#2a6a2a':'#1a3a1a');},
+  loads:()=>[{a:'pp',b:'nn',k:'pw'}],
+  contacts:(p,rt)=>rt.L.pw&&rt.det?[['pp','out']]:[]
+};}
+TYPES.cap=proxType(true);TYPES.ind=proxType(false);
+
 /* ===== 빌드 ===== */
 function drawTerm(g,p,t){const id=p.id+'.'+t.k,kind=t.kind||'e',r=t.r||(kind==='p'?8.5:7.5);
   const gg=el('g',{transform:`translate(${t.x},${t.y})`},g);
@@ -516,12 +693,12 @@ function drawTerm(g,p,t){const id=p.id+'.'+t.k,kind=t.kind||'e',r=t.r||(kind==='
     el('ellipse',{cx:-r*.38,cy:-r*.48,rx:r*.32,ry:r*.18,fill:'#fff',opacity:.5,transform:`rotate(-30 ${-r*.38} ${-r*.48})`},gg);}
   TERMEL[id]=el('circle',{r:r+3.5,fill:'none',stroke:'#ffd400','stroke-width':2.5,opacity:0},gg);
   if(t.lab)tx(g,t.x+r*.75,t.y-r*.75,t.lab,{'font-size':5,fill:'#555'});
-  TDEF[id]={part:p,t:Object.assign({kind,r},t)};if(t.bus==='+')BUSP.push(id);if(t.bus==='-')BUSN.push(id);}
+  TDEF[id]={part:p,t:Object.assign({kind,r},t)};if(t.bus==='+')BUSP.push(id);if(t.bus==='-')BUSN.push(id);if(t.bus){const G=BUSG[p.id]||(BUSG[p.id]={'+':[],'-':[]});G[t.bus].push(id);}}
 function buildPart(p){const T=TYPES[p.type];const g=el('g',{'data-part':p.id,transform:`translate(${p.x},${p.y})`},L_parts);if(T.movable)g.setAttribute('class','mv');
   let rt=RT[p.id];if(!rt||rt._type!==p.type)rt=Object.assign({_type:p.type,L:{}},T.init?T.init(p):{});
   RT[p.id]=rt;rt.g=g;rt.refs=T.draw(g,p)||{};
   for(const t of T.terms(p))drawTerm(g,p,t);}
-function rebuild(){L_parts.innerHTML='';TDEF={};TERMEL={};BUSP=[];BUSN=[];parts=parts.filter(p=>TYPES[p.type]);
+function rebuild(){L_parts.innerHTML='';TDEF={};TERMEL={};BUSP=[];BUSN=[];BUSG={};parts=parts.filter(p=>TYPES[p.type]);
   const keep={};for(const p of parts){buildPart(p);keep[p.id]=1;}for(const k in RT)if(!keep[k])delete RT[k];
   wires=wires.filter(w=>TDEF[w.a]&&TDEF[w.b]);pending=null;updPending();select(null);renderWires();}
 const partById=id=>parts.find(p=>p.id===id);
@@ -530,9 +707,9 @@ function termPos(id){const d=TDEF[id];return {x:d.part.x+d.t.x,y:d.part.y+d.t.y}
 /* ===== 배선 ===== */
 function wireColor(w){if(w.kind==='p')return '#2c6fe0';if(w.color)return w.color;const a=TDEF[w.a].t,b=TDEF[w.b].t;return (a.col==='b'||b.col==='b')?'#2a52d8':'#d92b2b';}
 function shade(c,f){const n=parseInt(c.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;r=clamp(Math.round(r*f),0,255);g=clamp(Math.round(g*f),0,255);b=clamp(Math.round(b*f),0,255);return '#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1);}
-function wirePath(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),sag=Math.min(150,d*.28)+14;return `M${a.x},${a.y} C${a.x+dx*.12},${a.y+sag} ${b.x-dx*.12},${b.y+sag} ${b.x},${b.y}`;}
+function wirePath(a,b,j){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),sag=j?-10:Math.min(150,d*.28)+14;return `M${a.x},${a.y} C${a.x+dx*.12},${a.y+sag} ${b.x-dx*.12},${b.y+sag} ${b.x},${b.y}`;}
 function renderWires(){L_wires.innerHTML='';WEL={};
-  for(const w of wires){const a=termPos(w.a),b=termPos(w.b),d=wirePath(a,b),col=wireColor(w),pn=w.kind==='p';
+  for(const w of wires){const a=termPos(w.a),b=termPos(w.b),d=wirePath(a,b,w.j),col=wireColor(w),pn=w.kind==='p';
     const g=el('g',{'data-wire':w.id},L_wires);const isSel=sel&&sel.t==='w'&&sel.id===w.id;
     el('path',{d,fill:'none',stroke:'#000',opacity:.28,'stroke-width':pn?7:5,transform:'translate(3,5)','pointer-events':'none'},g);
     if(isSel)el('path',{d,fill:'none',stroke:'#ffe600','stroke-width':pn?12:10,'stroke-linecap':'round','pointer-events':'none'},g);
@@ -565,106 +742,238 @@ function undoK(k,redo){const from=redo?REDO[k]:HIST[k],to=redo?HIST[k]:REDO[k];c
 
 function termDesc(id){const d=TDEF[id];if(!d)return id;const p=d.part,k=d.t.k;let m;
   if(/^p\d$/.test(k)&&d.t.bus)return '+24V';if(/^n\d$/.test(k)&&d.t.bus)return '0V';
-  if(p.type==='switch'){if(m=k.match(/^b(\d)_(\d)([tb])$/)){const j=+m[2];return `PB${m[1]} ${j<=2?'a접점(NO·누르면 연결)':'b접점(NC·평소 연결, 누르면 끊김)'} ${SW_NUM[j-1][m[3]==='t'?0:1]}번`;}
-    if(m=k.match(/^b(\d)_l([tb])$/))return `PB${m[1]} 버튼 램프 ${m[2]==='t'?'X1':'X2'}`;}
+  if(p.type==='switch'){if(m=k.match(/^b(\d)_(\d)([tb])$/)){const j=+m[2];return `PB${+m[1]+(p.base||1)-1} ${j<=2?'a접점(NO·누르면 연결)':'b접점(NC·평소 연결, 누르면 끊김)'} ${SW_NUM[j-1][m[3]==='t'?0:1]}번`;}
+    if(m=k.match(/^b(\d)_l([tb])$/))return `PB${+m[1]+(p.base||1)-1} 버튼 램프 ${m[2]==='t'?'X1':'X2'}`;}
   if(p.type==='relay'){if(m=k.match(/^k(\d)_a([12])$/))return `릴레이 K${m[1]} 코일 A${m[2]}`;
     if(m=k.match(/^k(\d)_(\d)(c|no|nc)$/))return `릴레이 K${m[1]} ${m[3]==='c'?'공통 '+m[2]+'1번':m[3]==='nc'?'b접점(NC·평소 연결) '+m[2]+'2번':'a접점(NO·코일 ON 시 연결) '+m[2]+'4번'}`;}
   if(p.type==='lamp'&&(m=k.match(/^l(\d)_([tb])$/)))return `램프 L${m[1]} ${m[2]==='t'?'+ (검정)':'− (파랑, 같은 줄 공통)'}`;
   if(p.type==='timer'){if(m=k.match(/^t(\d)_a([12])$/))return `타이머 T${m[1]} 코일 A${m[2]}`;if(m=k.match(/^t(\d)_(\d)([tb])$/))return `타이머 T${m[1]} ${+m[2]<=2?'a접점(NO)':'b접점(NC·평소 연결)'} ${SW_NUM[m[2]-1][m[3]==='t'?0:1]}번`;}
-  if(p.type==='counter')return '카운터 '+({c_a1:'입력 A1',c_a2:'입력 A2',c_r1:'리셋 R1',c_r2:'리셋 R2',c_com:'공통',c_1:'1번(도달 전 연결)',c_2:'2번(도달 시 연결)'})[k];
+  if(p.type==='counter')return '카운터 '+({c_a1:'입력 A1',c_a2:'입력 A2',c_r1:'리셋 R1',c_r2:'리셋 R2',c_com:'접점① 공통',c_1:'접점① 1번(도달 전 연결)',c_2:'접점① 2번(도달 시 연결)',c_com2:'접점② 공통',c_21:'접점② 1번(도달 전 연결)',c_22:'접점② 2번(도달 시 연결)'})[k];
   if(k==='y1p'||k==='y2p')return `${p.label} 솔레노이드 Y${k[1]} +`;if(k==='y1n'||k==='y2n')return `${p.label} 솔레노이드 Y${k[1]} −`;
+  if(p.type==='estop')return '비상정지 '+({a_t:'a접점(NO) 13번',a_b:'a접점(NO) 14번',b_t:'b접점(NC·평소 연결) 11번',b_b:'b접점(NC·평소 연결) 12번'})[k];
+  if(p.type==='lamp'&&k.startsWith('bz'))return `부저 ${k==='bz_t'?'+ (검정)':'− (파랑, 같은 줄 공통)'}`;
+  if(p.type==='cap'||p.type==='ind')return `${TYPES[p.type].name} ${p.label} ${({pp:'24V',out:'OUTPUT (감지 시 24V)',nn:'0V'})[k]}`;
+  if(k==='12'||k==='14')return `${p.label} 파일럿 포트 ${k}`;
   if(p.type==='sensor')return `리미트 스위치 ${p.label} ${({c:'공통 C',no:'NO (닿으면 연결)',nc:'NC (평소 연결, 닿으면 끊김)'})[k]}`;
   if(p.type==='frl')return '서비스 유닛 출구';if(p.type==='manifold')return k==='in'?'분배기 입구':'분배기 출구';
   return `${p.label||p.id} ${k}포트`;}
+
+/* ===== 전류 흐름 보기 (선 위에 마우스 / 선 탭) ===== */
+let flowHover=null,flowTick=0,flowMsg='';
+function cName(p,a,b){const k=a+' '+b;let m;
+  if(p.type==='switch'&&(m=a.match(/^b(\d)_(\d)/)))return `PB${+m[1]+(p.base||1)-1} ${+m[2]<=2?'a':'b'}접점`;
+  if(p.type==='relay'&&(m=a.match(/^k(\d)_/)))return `K${m[1]} ${/no/.test(k)?'a':'b'}접점`;
+  if(p.type==='timer'&&(m=a.match(/^t(\d)_(\d)/)))return `T${m[1]} ${+m[2]<=2?'a':'b'}접점`;
+  if(p.type==='counter')return `카운터 ${/c_2|c_22/.test(k)?'a':'b'}접점`;
+  if(p.type==='estop')return `비상정지 ${/a_/.test(k)?'a':'b'}접점`;
+  if(p.type==='sensor')return `${p.label} ${/no/.test(k)?'NO':'NC'}`;
+  if(p.type==='cap'||p.type==='ind')return `${p.label} 센서 출력`;
+  if(p.type==='lamp')return '';return p.label||p.id;}
+function lName(p,k){let m;if(p.type==='relay')return k.toUpperCase()+' 코일';if(p.type==='timer')return k.toUpperCase()+' 코일';
+  if(p.type==='lamp')return k==='bz'?'부저':k.toUpperCase()+' 램프';if(p.type==='counter')return k==='cnt'?'카운터 입력':'카운터 리셋';
+  if(p.type==='switch'&&(m=k.match(/lamp(\d)/)))return `PB${+m[1]+(p.base||1)} 램프`;
+  if(k[0]==='y')return `${p.label} ${k.toUpperCase()} 솔레노이드`;if(k==='pw')return `${p.label} 센서 전원`;return p.label+' '+k;}
+function egraph(){const adj=new Map(),add=(a,b,e)=>{(adj.get(a)||adj.set(a,[]).get(a)).push([b,e]);(adj.get(b)||adj.set(b,[]).get(b)).push([a,e]);};
+  for(const w of wires)if(w.kind==='e')add(w.a,w.b,{w:w.id});
+  for(const pid in BUSG){const G=BUSG[pid];for(const sgn of ['+','-'])for(const x of G[sgn].slice(1))add(G[sgn][0],x,{bus:1});}
+  for(const p of parts){const T=TYPES[p.type];if(T.contacts)for(const [a,b] of T.contacts(p,RT[p.id]))add(p.id+'.'+a,p.id+'.'+b,{c:cName(p,a,b),p:p.id,a:p.id+'.'+a,b:p.id+'.'+b});}
+  return adj;}
+function bfs(adj,start,targets){if(targets.has(start))return [];const prev=new Map([[start,null]]),q=[start];
+  while(q.length){const n=q.shift();for(const [m,e] of adj.get(n)||[]){if(prev.has(m))continue;prev.set(m,[n,e]);if(targets.has(m)){const path=[];let c=m;while(prev.get(c)){const [f,ed]=prev.get(c);path.unshift({from:f,to:c,e:ed});c=f;}return path;}q.push(m);}}
+  return null;}
+function currentPaths(){if(!S.power)return [];const adj=egraph(),PS=new Set((BUSG.PW||{})['+']||[]),NS=new Set((BUSG.PW||{})['-']||[]),out=[];
+  for(const p of parts){const T=TYPES[p.type];if(!T.loads)continue;const rt=RT[p.id];
+    for(const l of T.loads(p)){if(!rt.L[l.k])continue;const a=p.id+'.'+l.a,b=p.id+'.'+l.b;
+      let pa=bfs(adj,a,PS),pb=bfs(adj,b,NS),x=a,y=b;if(!pa||!pb){pa=bfs(adj,b,PS);pb=bfs(adj,a,NS);x=b;y=a;}
+      if(!pa||!pb)continue;
+      const seq=pa.slice().reverse().map(s=>({from:s.to,to:s.from,e:s.e})).concat(pb);
+      out.push({load:lName(p,l.k),pid:p.id,a:x,b:y,seq,split:pa.length});}}
+  return out;}
+function drawFlow(){L_flow.innerHTML='';const wid=flowHover||(sel&&sel.t==='w'?sel.id:null);flowMsg='';if(!wid)return;
+  const w=wires.find(q=>q.id===wid);if(!w)return;
+  if(w.kind==='p'){const st=PST(w.a);el('path',{d:wirePath(termPos(w.a),termPos(w.b)),fill:'none',stroke:'#7fd0ff','stroke-width':9,opacity:.55,'stroke-linecap':'round'},L_flow);
+    flowMsg=st==='P'?`💨 이 배관: 공기 압력 ${PNET(w.a).toFixed(1)} bar (공급 중)`:st==='E'?'💨 이 배관: 배기 중 (공기가 밸브 배기구로 빠지는 쪽)':'💨 이 배관: 막힘 — 공급도 배기도 연결 안 됨';return;}
+  const paths=currentPaths().filter(P=>P.seq.some(s=>s.e.w===wid));
+  if(!paths.length){el('path',{d:wirePath(termPos(w.a),termPos(w.b),w.j),fill:'none',stroke:'#ffffff','stroke-width':8,opacity:.45,'stroke-linecap':'round','stroke-dasharray':'4 6'},L_flow);
+    if(!S.power){flowMsg='⚡ 전원이 꺼져 있어서 전류가 흐르지 않아요';return;}
+    const adj=egraph(),toP=bfs(adj,w.a,new Set(BUSG.PW['+'])),toN=bfs(adj,w.a,new Set(BUSG.PW['-']));
+    flowMsg=toP&&toN?'⚡ 이 선은 단락 상태예요':toP?'⚡ 이 선: +24V는 와 있지만 다음 접점이 열려 있거나 부하가 없어서 전류가 흐르지 않아요':toN?'⚡ 이 선: 0V 쪽 선이에요. 연결된 부하가 꺼져 있어서 전류가 없어요':'⚡ 이 선: 전압 없음 — 앞쪽 접점이 열려 있어요';return;}
+  const seen=new Set();const descs=[];
+  for(const P of paths.slice(0,4)){const names=['+24V'];
+    P.seq.forEach((s,i)=>{if(i===P.split)names.push('【'+P.load+'】');if(s.e.w){if(seen.has(s.e.w+'|'+s.from))return;seen.add(s.e.w+'|'+s.from);
+        const a=termPos(s.from),b=termPos(s.to);const hov=s.e.w===wid,ww=wires.find(q=>q.id===s.e.w);
+        el('path',{d:wirePath(a,b,ww&&ww.j),fill:'none',stroke:'#3a2a00','stroke-width':hov?9:7,opacity:.5,'stroke-linecap':'round'},L_flow);
+        el('path',{d:wirePath(a,b,ww&&ww.j),fill:'none',stroke:'#ffe14a','stroke-width':hov?5:3.5,'stroke-linecap':'round',class:'cur'},L_flow);}
+      else if(s.e.c!==undefined){if(s.e.c)names.push(s.e.c);[s.e.a,s.e.b].forEach(t=>{const q=termPos(t);el('circle',{cx:q.x,cy:q.y,r:12,fill:'none',stroke:'#ffe14a','stroke-width':2.5},L_flow);});}});
+    if(P.split>=P.seq.length)names.push('【'+P.load+'】');
+    [P.a,P.b].forEach(t=>{const q=termPos(t);el('circle',{cx:q.x,cy:q.y,r:14,fill:'#ffe14a',opacity:.35},L_flow);});
+    names.push('0V');descs.push(names.join(' → '));}
+  flowMsg='⚡ 전류 흐름: '+descs.join('   /   ');}
 /* ===== 해석 ===== */
 function makeUF(){const P=new Map();const f=x=>{let r=x,n;while((n=P.get(r))!==undefined&&n!==r)r=n;let c=x;while(c!==r){n=P.get(c);P.set(c,r);c=n;}return r;};return {f,u:(a,b)=>{a=f(a);b=f(b);if(a!==b)P.set(a,b);}};}
 function clearLoads(){for(const p of parts)RT[p.id].L={};}
 function solveElectric(){
-  for(let it=0;it<30;it++){const uf=makeUF();
-    for(const x of BUSN)uf.u(BUSN[0],x);if(S.power)for(const x of BUSP)uf.u(BUSP[0],x);
+  for(let it=0;it<1;it++){const uf=makeUF();
+    for(const pid in BUSG){const G=BUSG[pid];for(const x of G['+'])uf.u(G['+'][0],x);for(const x of G['-'])uf.u(G['-'][0],x);}
     for(const w of wires)if(w.kind==='e')uf.u(w.a,w.b);
     for(const p of parts){const T=TYPES[p.type];if(T.contacts)for(const [a,b] of T.contacts(p,RT[p.id]))uf.u(p.id+'.'+a,p.id+'.'+b);}
-    if(S.power&&uf.f(BUSP[0])===uf.f(BUSN[0])){S.power=false;clearLoads();flash('⚡ 단락(쇼트)! +24V와 0V가 바로 이어져 전원이 꺼졌어요. 배선을 확인하세요.',true,4500);return;}
-    const PN=S.power?uf.f(BUSP[0]):null,NN=uf.f(BUSN[0]);let ch=false;
+    if(S.power&&uf.f('PW.p0')===uf.f('PW.n0')){S.power=false;clearLoads();flash('⚡ 단락(쇼트)! +24V와 0V가 바로 이어져 전원이 꺼졌어요. 배선을 확인하세요.',true,4500);return;}
+    const PN=S.power?uf.f('PW.p0'):null,NN=uf.f('PW.n0');let ch=false;
     for(const p of parts){const T=TYPES[p.type];if(!T.loads)continue;const rt=RT[p.id];
       for(const l of T.loads(p)){const ra=uf.f(p.id+'.'+l.a),rb=uf.f(p.id+'.'+l.b),on=S.power&&((ra===PN&&rb===NN)||(ra===NN&&rb===PN));if(!!rt.L[l.k]!==on){rt.L[l.k]=on;ch=true;}}}
     if(!ch)break;}
   for(const p of parts){const T=TYPES[p.type];if(T.afterLoads)T.afterLoads(p,RT[p.id]);}
 }
-function solvePneu(dt){const uf=makeUF(),src=[],exh=[],thr=[];
+function solvePneu(dt){const uf=makeUF(),src=[],exh=[],thr=[],fcs=[];
   for(const w of wires)if(w.kind==='p')uf.u(w.a,w.b);
-  for(const p of parts){const T=TYPES[p.type];if(T.pneu)T.pneu(p,RT[p.id],(a,b)=>uf.u(p.id+'.'+a,p.id+'.'+b),k=>src.push(p.id+'.'+k),k=>exh.push(p.id+'.'+k),(k,f)=>thr.push([p.id+'.'+k,f]));}
-  const SR=new Set(src.map(uf.f)),ER=new Set(exh.map(uf.f)),TH=new Map();for(const [k,f] of thr){const r=uf.f(k);TH.set(r,Math.min(TH.get(r)??1,f));}
-  for(const r of SR)if(ER.has(r)){hints.push('공급 공기가 배기 쪽으로 새고 있어요 (배관 확인)');break;}
+  for(const p of parts){const T=TYPES[p.type];if(T.pneu)T.pneu(p,RT[p.id],(a,b)=>uf.u(p.id+'.'+a,p.id+'.'+b),(k,pr)=>src.push([p.id+'.'+k,pr??S.reg]),k=>exh.push(p.id+'.'+k),(k,f)=>thr.push([p.id+'.'+k,f]),(a,b,f)=>fcs.push([p.id+'.'+a,p.id+'.'+b,f]));}
+  /* 일방향 유량제어: 연결 전 양쪽 상태로 흐름 방향 판단 (2→1 이 조임) */
+  if(fcs.length){const s0=new Set(src.map(x=>uf.f(x[0]))),e0=new Set(exh.map(uf.f));
+    for(const [k1,k2,f] of fcs){const r1=uf.f(k1),r2=uf.f(k2),s1=s0.has(r1),s2=s0.has(r2),e1=e0.has(r1),e2=e0.has(r2);
+      const dir21=(s2&&!s1)||(e1&&!e2&&!s2);if(dir21)thr.push([k1,f]);}
+    for(const [k1,k2] of fcs)uf.u(k1,k2);}
+  const SR=new Map();for(const [k,pr] of src){const r=uf.f(k);SR.set(r,Math.max(SR.get(r)||0,pr));}
+  const ER=new Set(exh.map(uf.f)),TH=new Map(),BO=new Map();
+  for(const [k,f] of thr){const r=uf.f(k);if(f<1)TH.set(r,Math.min(TH.get(r)??1,f));else BO.set(r,Math.max(BO.get(r)??1,f));}
+  for(const r of SR.keys())if(ER.has(r)){hints.push('공급 공기가 배기 쪽으로 새고 있어요 (배관 확인)');break;}
   PST=id=>{const r=uf.f(id),s=SR.has(r),e=ER.has(r);return s&&!e?'P':e?'E':'B';};
-  PNET=id=>PST(id)==='P'?(S.air?S.reg:0):0;
-  const pf=clamp(S.reg/5,.3,1.5);
-  for(const p of parts){const T=TYPES[p.type];if(!T.cyl)continue;const rt=RT[p.id],ia=p.id+'.A',a=PST(ia);let v=0,f=1;
-    if(T.sa){v=a==='P'?1:a==='E'?-1:0;if(v)f=TH.get(uf.f(ia))??1;}
+  PNET=id=>{const r=uf.f(id);return SR.has(r)&&!ER.has(r)?(S.air?SR.get(r):0):0;};
+  const FAC=id=>{const r=uf.f(id);return (TH.get(r)??1)*(BO.get(r)??1);};
+  for(const p of parts){const T=TYPES[p.type];if(!T.cyl)continue;const rt=RT[p.id],ia=p.id+'.A',a=PST(ia);let v=0,f=1,pr=0;
+    if(T.sa){v=a==='P'?1:a==='E'?-1:0;if(v)f=FAC(ia);pr=PNET(ia)||S.reg;}
     else{const ib=p.id+'.B',b=PST(ib);
-      if(a==='P'&&b==='E'){v=1;f=TH.get(uf.f(ib))??1;}else if(b==='P'&&a==='E'){v=-1;f=TH.get(uf.f(ia))??1;}
+      if(a==='P'&&b==='E'){v=1;f=FAC(ib);pr=PNET(ia);}else if(b==='P'&&a==='E'){v=-1;f=FAC(ia);pr=PNET(ib);}
       else if(a==='P'&&b==='B'&&rt.pos<1)hints.push(`실린더 ${p.label}: B포트가 막혀 공기가 못 빠져서 안 움직여요 (B포트도 밸브에 연결)`);
       else if(b==='P'&&a==='B'&&rt.pos>0)hints.push(`실린더 ${p.label}: A포트가 막혀 공기가 못 빠져서 안 움직여요 (A포트도 밸브에 연결)`);}
-    if(rt.manual){hints.unshift(`✋ 실린더 ${p.label} 손으로 잡는 중: ${Math.round(rt.pos*100)}% — 이 위치에서 로드 끝에 닿도록 리미트 스위치를 놓으세요`);continue;}
-    rt.pos=clamp(rt.pos+v*dt/1.0*pf*f,0,1);}
+    const p0=rt.pos;
+    if(rt.manual){hints.unshift(`✋ 실린더 ${p.label} 손으로 잡는 중: ${Math.round(rt.pos*100)}% — 이 위치에서 로드 끝에 닿도록 센서를 놓으세요`);}
+    else rt.pos=clamp(rt.pos+v*dt*clamp(pr/5,.3,1.6)*f,0,1);
+    rt.v=dt>0?((rt.manual?rt.pos-(rt.pp??rt.pos):rt.pos-p0)/dt):0;rt.pp=rt.pos;}
 }
 
 /* ===== 상태줄 ===== */
 let flashM='',flashT=0,flashW=false,lastM=null,lastW=null;
 function flash(m,w,ms){flashM=m;flashW=!!w;flashT=performance.now()+(ms||2600);}
-function updStatus(now){let m,w=false;if(flashT>now){m=flashM;w=flashW;}else if(pending)m=`🔗 ${termDesc(pending)} 선택됨 → 화면을 옮겨도 유지돼요. 연결할 단자를 누르세요 (빈 곳을 톡 누르면 취소)`;else if(hints.length)m='ℹ️ '+hints[0];
+function updStatus(now){let m,w=false;if(hovMsg)m=hovMsg;else if(flowMsg)m=flowMsg;else if(flashT>now){m=flashM;w=flashW;}else if(pending)m=`🔗 ${termDesc(pending)} 선택됨 → 화면을 옮겨도 유지돼요. 연결할 단자를 누르세요 (빈 곳을 톡 누르면 취소)`;else if(hints.length)m='ℹ️ '+hints[0];
   else m='단자를 차례로 눌러 배선 · 선/부품을 누르면 삭제 버튼 · 버튼은 꾹 누르기 · 메뉴 ☰ 에 예제 있음';
   if(m!==lastM||w!==lastW){lastM=m;lastW=w;$('msg').textContent=m;$('foot').className=w?'warn':'';}}
 
 /* ===== 저장 ===== */
 const ser=()=>JSON.stringify({parts,wires,reg:S.reg});
 function save(){try{localStorage.setItem(KEY,ser());}catch(e){}if(window.__cloudSave)window.__cloudSave();}
+function normParts(){for(const b of baseParts()){if(!FIXED.includes(b.id)&&b.id!=='FRL'&&b.id!=='MF')continue;const q=parts.find(x=>x.id===b.id);
+    if(!q)parts.push(b);else if(FIXED.includes(b.id)){q.x=b.x;q.y=b.y;q.type=b.type;if(b.base)q.base=b.base;}}}
 function applyState(str){let s;try{s=JSON.parse(str);}catch(e){return false;}if(!s||!Array.isArray(s.parts)||!s.parts.some(p=>p.id==='PW'))return false;
-  parts=s.parts;wires=s.wires||[];S.reg=s.reg||5;HIST.e=[];HIST.p=[];REDO.e=[];REDO.p=[];rebuild();try{localStorage.setItem(KEY,str);}catch(e){}return true;}
+  parts=s.parts;wires=s.wires||[];S.reg=s.reg||5;normParts();if(!wires.some(w=>w.j))wires=JUMPERS().concat(wires);HIST.e=[];HIST.p=[];REDO.e=[];REDO.p=[];rebuild();try{localStorage.setItem(KEY,ser());}catch(e){}return true;}
 
 /* ===== 레이아웃 / 예제 ===== */
-const MX=i=>164+i*184;
-function baseParts(){return [{id:'PW',type:'power',x:MX(0),y:4},{id:'SW',type:'switch',x:MX(1),y:4},{id:'RA',type:'relay',x:MX(2),y:4,base:1},{id:'RB',type:'relay',x:MX(3),y:4,base:4},
-  {id:'LP',type:'lamp',x:MX(4),y:4},{id:'TM',type:'timer',x:MX(5),y:4,sets:[3,3]},{id:'CT',type:'counter',x:MX(6),y:4,preset:3},
+const MX=i=>30+i*184;
+function baseParts(){return [{id:'PW',type:'power',x:MX(0),y:4},{id:'ES',type:'estop',x:MX(1),y:4},{id:'SW',type:'switch',x:MX(2),y:4,base:1},{id:'SW2',type:'switch',x:MX(3),y:4,base:4},
+  {id:'RA',type:'relay',x:MX(4),y:4,base:1},{id:'RB',type:'relay',x:MX(5),y:4,base:4},{id:'RC',type:'relay',x:MX(6),y:4,base:7},
+  {id:'LP',type:'lamp',x:MX(7),y:4},{id:'TM',type:'timer',x:MX(8),y:4,sets:[3,3]},{id:'CT',type:'counter',x:MX(9),y:4,preset:3},
   {id:'FRL',type:'frl',x:10,y:277},{id:'MF',type:'manifold',x:126,y:592},{id:'CA',type:'cylDA',x:329,y:311,label:'A'}];}
+const FIXED=['PW','ES','SW','SW2','RA','RB','RC','LP','TM','CT'];
+const JUMPERS=()=>{const o=[];for(let i=0;i<FIXED.length-1;i++){const A=FIXED[i],B=FIXED[i+1];o.push({id:nid(),a:A+'.p4',b:B+'.p0',kind:'e',color:null,j:true},{id:nid(),a:A+'.n4',b:B+'.n0',kind:'e',color:null,j:true});}return o;};
 const E=(a,b,c)=>({id:nid(),a,b,kind:'e',color:c||null}),P=(a,b)=>({id:nid(),a,b,kind:'p',color:null});
 const TUBES=()=>[P('FRL.out','MF.in'),P('MF.o7','V1.P'),P('V1.A','CA.A'),P('V1.B','CA.B')];
-const HOLD=(stopIn)=>[E('SW.p1','SW.b1_3t'),E(stopIn||'SW.b1_3b','SW.b2_1t'),E('SW.b2_1b','RA.k1_a1'),E('RA.k1_a2','RA.n1'),E(stopIn||'SW.b1_3b','RA.k1_1c'),E('RA.k1_1no','RA.k1_a1')];
+const HOLD=(stopIn)=>[E('SW.p1','ES.b_t'),E('ES.b_b','SW.b1_3t'),E(stopIn||'SW.b1_3b','SW.b2_1t'),E('SW.b2_1b','RA.k1_a1'),E('RA.k1_a2','RA.n1'),E(stopIn||'SW.b1_3b','RA.k1_1c'),E('RA.k1_1no','RA.k1_a1')];
 const SEN=[{id:'S1',type:'sensor',x:613,y:356,label:'LS1',dir:'L'},{id:'S2',type:'sensor',x:868,y:356,label:'LS2',dir:'R'}];
+/* ===== 설비보전산업기사 공기압시스템 예제1 ===== */
+function MTP(sensor){return [{id:'CB',type:'cylDA',x:1000,y:311,label:'B'},
+  {id:'V1',type:'v52d',x:400,y:650,label:'V1'},{id:'V2',type:'v52d',x:1070,y:650,label:'V2'},
+  {id:'F1',type:'flow',x:290,y:470,label:'F1',thr:60},{id:'F2',type:'flow',x:960,y:470,label:'F2',thr:60},
+  {id:'S1',type:'sensor',x:613,y:356,label:'LS1',dir:'L'},
+  sensor?{id:'S2',type:'cap',x:870,y:368,label:'LS2'}:{id:'S2',type:'sensor',x:868,y:356,label:'LS2',dir:'R'},
+  {id:'S3',type:'sensor',x:1284,y:356,label:'LS3',dir:'L'},
+  sensor?{id:'S4',type:'ind',x:1541,y:368,label:'LS4'}:{id:'S4',type:'sensor',x:1539,y:356,label:'LS4',dir:'R'}];}
+function MTW(o){const L2=o.sensor?'S2.out':'S2.no',L4=o.sensor?'S4.out':'S4.no',w=[];const e=(a,b)=>w.push(E(a,b));
+  /* A+ : (PB1 | K1 [| K7]) - K6 b - K1 */
+  e('SW.p0','SW.b1_1t');e('RA.p0','RA.k1_1c');e('RA.k1_1no','SW.b1_1b');if(o.mt){e('RC.p0','RC.k7_1c');e('RC.k7_1no','SW.b1_1b');}
+  e('SW.b1_1b','RB.k6_1c');e('RB.k6_1nc','RA.k1_a1');e('RA.k1_a2','RA.n0');
+  /* A- : (LS2 | K2) - K1 a - K2 */
+  if(o.sensor){e('RA.p1','S2.pp');e('S2.nn','RA.n1');}else e('RA.p1','S2.c');
+  e('RA.p2','RA.k2_1c');e('RA.k2_1no',L2);e(L2,'RA.k1_2c');e('RA.k1_2no','RA.k2_a1');e('RA.k2_a2','RA.n1');
+  /* Timer : (LS1 | K3) - K2 a - K3, T1 */
+  e('RA.p3','S1.c');e('RA.p4','RA.k3_1c');e('RA.k3_1no','S1.no');e('S1.no','RA.k2_2c');e('RA.k2_2no','RA.k3_a1');e('RA.k3_a2','RA.n2');e('RA.k2_2no','TM.t1_a1');e('TM.t1_a2','TM.n0');
+  /* B+ : (T1 | K4) - K3 a - K4 */
+  e('TM.p0','TM.t1_1t');e('RB.p0','RB.k4_1c');e('RB.k4_1no','TM.t1_1b');e('TM.t1_1b','RA.k3_2c');e('RA.k3_2no','RB.k4_a1');e('RB.k4_a2','RB.n0');
+  /* B- : (LS4 | K5) - K4 a - K5 */
+  if(o.sensor){e('RB.p1','S4.pp');e('S4.nn','RB.n1');}else e('RB.p1','S4.c');
+  e('RB.p2','RB.k5_1c');e('RB.k5_1no',L4);e(L4,'RB.k4_2c');e('RB.k4_2no','RB.k5_a1');e('RB.k5_a2','RB.n1');
+  /* 완료 : LS3 - K5 a - K6 */
+  e('RB.p3','S3.c');e('S3.no','RB.k5_2c');e('RB.k5_2no','RB.k6_a1');e('RB.k6_a2','RB.n2');
+  /* 출력 */
+  e('RA.p0','RA.k1_3c');e('RA.k1_3no','RA.k2_3c');e('RA.k2_3nc','V1.y1p');e('V1.y1n','RA.n3');
+  e('RA.p1','RA.k2_4c');e('RA.k2_4no','V1.y2p');e('V1.y2n','RA.n4');
+  e('RB.p4','RB.k4_3c');e('RB.k4_3no','RB.k5_3c');e('RB.k5_3nc','V2.y1p');e('V2.y1n','RB.n3');
+  e('RB.p4','RB.k5_4c');e('RB.k5_4no','V2.y2p');e('V2.y2n','RB.n4');
+  if(o.mt){/* K7 = (PB2 | K7) - C1 b - K7 ∥ L1 ;  카운터 IN = K6 a - K7 a ;  RESET = PB3 */
+    e('SW.p1','SW.b2_1t');e('RC.p1','RC.k7_2c');e('RC.k7_2no','SW.b2_1b');e('SW.b2_1b','CT.c_com');e('CT.c_1','RC.k7_a1');e('RC.k7_a2','RC.n0');
+    e('CT.c_1','LP.l1_t');e('LP.l1_b','LP.n0');
+    e('CT.p0','RB.k6_2c');e('RB.k6_2no','RC.k7_3c');e('RC.k7_3no','CT.c_a1');e('CT.c_a2','CT.n0');
+    e('SW.p2','SW.b3_1t');e('SW.b3_1b','CT.c_r1');e('CT.c_r2','CT.n1');}
+  w.push(P('FRL.out','MF.in'),P('MF.o0','V1.P'),P('MF.o1','V2.P'),P('V1.A','F1.1'),P('F1.2','CA.A'),P('V1.B','CA.B'),P('V2.A','F2.1'),P('F2.2','CB.A'),P('V2.B','CB.B'));
+  return w;}
+/* 비상정지 회로 (31쪽): A = 5/2 양솔(Y1,Y2), B = 5/2 편솔(Y3) */
+function ESP(){return [{id:'CB',type:'cylDA',x:1000,y:311,label:'B'},
+  {id:'V1',type:'v52d',x:400,y:650,label:'V1'},{id:'V2',type:'v52s',x:1070,y:650,label:'V2'},
+  {id:'S1',type:'sensor',x:613,y:356,label:'LS1',dir:'L'},{id:'S2',type:'sensor',x:868,y:356,label:'LS2',dir:'R'},
+  {id:'S3',type:'sensor',x:1284,y:356,label:'LS3',dir:'L'},{id:'S4',type:'sensor',x:1539,y:356,label:'LS4',dir:'R'}];}
+function ESW(){const w=[],e=(a,b)=>w.push(E(a,b)),SUB='ES.b_b';
+  e('PW.p0','ES.b_t');                                        /* ES1 b접점 → 제어 모선 */
+  e('PW.p1','ES.a_t');e('ES.a_b','RA.k1_a1');e('RA.k1_a2','RA.n0');e('ES.a_b','RA.k1_1c');e('RA.k1_1no','V1.y2p'); /* ES1 a → K1, K1 a → Y2 */
+  e(SUB,'SW.b1_1t');e('SW.b1_1b','S3.c');e(SUB,'RA.k2_1c');e('RA.k2_1no','S3.no');e('S3.no','RB.k5_1c');e('RB.k5_1nc','RA.k2_a1');e('RA.k2_a2','RA.n1');
+  e(SUB,'S2.c');e(SUB,'RA.k3_1c');e('RA.k3_1no','S2.no');e('S2.no','RA.k2_2c');e('RA.k2_2no','RA.k3_a1');e('RA.k3_a2','RA.n2');
+  e(SUB,'S4.c');e(SUB,'RB.k4_1c');e('RB.k4_1no','S4.no');e('S4.no','RA.k3_2c');e('RA.k3_2no','RB.k4_a1');e('RB.k4_a2','RB.n0');
+  e(SUB,'S1.c');e('S1.no','TM.t1_a1');e('TM.t1_a2','TM.n0');
+  e(SUB,'TM.t1_1t');e('TM.t1_1b','RB.k4_2c');e('RB.k4_2no','RB.k5_a1');e('RB.k5_a2','RB.n1');
+  e(SUB,'RA.k2_3c');e('RA.k2_3no','RB.k4_3c');e('RB.k4_3nc','V1.y1p');e('V1.y1n','RA.n3');
+  e('RA.k2_3no','RB.k4_4c');e('RB.k4_4no','RA.k1_2c');e('RA.k1_2nc','V1.y2p');e('V1.y2n','RA.n4');
+  e(SUB,'RA.k3_3c');e('RA.k3_3no','V2.y1p');e('V2.y1n','RB.n2');
+  w.push(P('FRL.out','MF.in'),P('MF.o0','V1.P'),P('MF.o1','V2.P'),P('V1.A','CA.A'),P('V1.B','CA.B'),P('V2.A','CB.A'),P('V2.B','CB.B'));
+  return w;}
 const EX={
   reset:{v:'v52s',w:()=>[],msg:'새 과제예요. 단자를 눌러 직접 배선해 보세요'},
-  hold:{v:'v52s',msg:'예제①: POWER ON → 파란 손잡이로 공기 열기 → PB2(초록) 누르면 전진 유지, PB1(빨강) 누르면 후진',
+  hold:{v:'v52s',msg:'예제①: POWER ON → 파란 손잡이로 공기 열기 → PB2 누르면 전진 유지, PB1 누르면 후진',
     w:()=>[...HOLD(),E('RA.p2','RA.k1_2c'),E('RA.k1_2no','V1.y1p'),E('V1.y1n','RA.n2'),E('RA.k1_2no','LP.l1_t'),E('LP.l1_b','LP.n0'),...TUBES()]},
   auto:{v:'v52d',sens:true,msg:'예제②: POWER ON → 공기 열기 → PB2 누르면 리미트 스위치 LS1·LS2로 계속 왕복, PB1 누르면 후진 후 정지',
     w:()=>[...HOLD(),E('RA.p2','S1.c'),E('RB.p0','S2.c'),
       E('S1.no','RA.k1_2c'),E('RA.k1_2no','V1.y1p'),E('V1.y1n','RA.n3'),E('S2.no','V1.y2p'),E('V1.y2n','RB.n1'),...TUBES()]},
   timer:{v:'v52s',sens:'S2',msg:'예제③: POWER ON → 공기 열기 → PB2 누르면 전진, 끝(LS2)에서 T1 3초 뒤 자동 후진',
-    w:()=>[E('SW.p1','SW.b1_3t'),E('SW.b1_3b','TM.t1_3t'),...HOLD('TM.t1_3b').slice(1),E('RA.p2','RA.k1_2c'),E('RA.k1_2no','V1.y1p'),E('V1.y1n','RA.n2'),
+    w:()=>[E('SW.p1','ES.b_t'),E('ES.b_b','SW.b1_3t'),E('SW.b1_3b','TM.t1_3t'),...HOLD('TM.t1_3b').slice(2),E('RA.p2','RA.k1_2c'),E('RA.k1_2no','V1.y1p'),E('V1.y1n','RA.n2'),
       E('RB.p0','S2.c'),E('S2.no','TM.t1_a1'),E('TM.t1_a2','TM.n0'),...TUBES()]},
-  count:{v:'v52d',sens:true,msg:'예제④: POWER ON → 공기 열기 → PB2 누르면 왕복, 카운터 3회가 되면 정지 (PB3 = 카운터 리셋)',
-    w:()=>[E('SW.p1','SW.b1_3t'),E('SW.b1_3b','CT.c_com'),...HOLD('CT.c_1').slice(1),E('RA.p2','S1.c'),E('RB.p0','S2.c'),
+  count:{v:'v52d',sens:true,msg:'예제④: POWER ON → 공기 열기 → PB2 누르면 왕복, 카운터 3회가 되면 정지 (PB3 = 카운터 리셋, 수동복귀라 한 번 눌러 ON → 다시 눌러 OFF)',
+    w:()=>[E('SW.p1','ES.b_t'),E('ES.b_b','SW.b1_3t'),E('SW.b1_3b','CT.c_com'),...HOLD('CT.c_1').slice(2),E('RA.p2','S1.c'),E('RB.p0','S2.c'),
       E('S1.no','RA.k1_2c'),E('RA.k1_2no','V1.y1p'),E('V1.y1n','RA.n3'),E('S2.no','V1.y2p'),E('V1.y2n','RB.n1'),
-      E('S2.no','CT.c_a1'),E('CT.c_a2','CT.n0'),E('SW.p3','SW.b3_1t'),E('SW.b3_1b','CT.c_r1'),E('CT.c_r2','CT.n1'),...TUBES()]}
+      E('S2.no','CT.c_a1'),E('CT.c_a2','CT.n0'),E('SW.p3','SW.b3_1t'),E('SW.b3_1b','CT.c_r1'),E('CT.c_r2','CT.n1'),...TUBES()]},
+  mtb:{parts:()=>MTP(false),msg:'예제⑥ 기본 회로: POWER ON → 공기 열기 → PB1 한 번 누르면 A+ → A− → 3초 → B+ → B− 1사이클',w:()=>MTW({})},
+  mt17:{parts:()=>MTP(false),msg:'예제⑦ 유지보수 1): PB1=1사이클, PB2=3회 연속(램프1 점등), PB3=카운터 리셋 (수동복귀: 눌러서 ON → 다시 눌러서 OFF)',w:()=>MTW({mt:true})},
+  mt28:{parts:()=>MTP(true),msg:'예제⑧ 유지보수 2): LS2 → 정전용량형 센서, LS4 → 유도형 센서로 교체 (3선식: 24V·OUTPUT·0V). 동작은 ⑦과 같아요',w:()=>MTW({mt:true,sensor:true})},
+  es31:{parts:()=>ESP(),tm:[2,3],msg:'예제⑨ 비상정지 회로: PB1 → A+ → B+ → A− → 2초 → B−. 동작 중 비상정지를 누르면 전체 회로가 끊기고 K1이 Y2를 켜서 A가 후진해요',w:()=>ESW()},
+  pneu:{v:'pv52s',extra:[{id:'V2',type:'mv32nc',x:720,y:460,label:'V2'},{id:'V3',type:'mv32nc',x:880,y:460,label:'V3'},{id:'V4',type:'shuttle',x:800,y:640,label:'V4'}],
+    msg:'예제⑤: 공기 열기 → 푸시버튼 밸브 V2 또는 V3를 누르고 있으면(셔틀=OR) 공압작동밸브 V1이 바뀌어 전진, 떼면 스프링으로 후진. 전기 없이 공압만으로 동작해요',
+    w:()=>[...TUBES(),P('MF.o0','V2.P'),P('MF.o1','V3.P'),P('V2.A','V4.X'),P('V3.A','V4.Y'),P('V4.A','V1.14')]}
 };
 function loadExample(k){const ex=EX[k];
-  parts=baseParts().concat([{id:'V1',type:ex.v,x:ex.v==='v52d'?420:434,y:630,label:'V1'}]);
+  parts=ex.parts?baseParts().concat(ex.parts()):baseParts().concat([{id:'V1',type:ex.v,x:ex.v==='v52d'?420:434,y:630,label:'V1'}]);if(ex.extra)parts=parts.concat(ex.extra.map(q=>({...q})));if(ex.tm){const t=parts.find(q=>q.id==='TM');t.sets=ex.tm.slice();}
   if(ex.sens)parts=parts.concat(ex.sens===true?SEN.map(s=>({...s})):SEN.filter(s=>s.id===ex.sens).map(s=>({...s})));
-  RT={};rebuild();wires=ex.w();HIST.e=[];HIST.p=[];REDO.e=[];REDO.p=[];renderWires();save();flash(ex.msg,false,7000);}
+  RT={};rebuild();wires=JUMPERS().concat(ex.w());HIST.e=[];HIST.p=[];REDO.e=[];REDO.p=[];renderWires();save();flash(ex.msg,false,7000);}
 function addPart(type,dir){const T=TYPES[type];let p;
   if(T.cyl){let i=0;while(parts.some(q=>q.id==='C'+String.fromCharCode(65+i)))i++;const L=String.fromCharCode(65+i);p={id:'C'+L,type,label:L};}
   else if(type==='sensor'){let n=1;while(parts.some(q=>q.id==='S'+n))n++;p={id:'S'+n,type,label:'LS'+n,dir:dir||'L',};}
-  else if(type==='flow'||type==='gauge'){let n=1;const pre=type==='flow'?'F':'G';while(parts.some(q=>q.id===pre+n))n++;p={id:pre+n,type,label:pre+n};}
+  else if(type==='cap'||type==='ind'){let n=1;while(parts.some(q=>q.id==='S'+n))n++;p={id:'S'+n,type,label:'PX'+n};}
+  else if(type==='flow'||type==='gauge'||type==='prv'){let n=1;const pre=type==='gauge'?'G':'F';while(parts.some(q=>q.id===pre+n))n++;p={id:pre+n,type,label:pre+n};}
   else{let n=1;while(parts.some(q=>q.id==='V'+n))n++;p={id:'V'+n,type,label:'V'+n};}
   const spot=freeSpot(T.w,T.h);p.x=spot.x;p.y=spot.y;
   parts.push(p);buildPart(p);updPending();renderWires();save();flash(`${T.nm?T.nm(p):T.name} ${p.label} 추가 — 끌어서 원하는 곳으로 옮기세요`);}
 
 function freeSpot(w,h){const boxes=parts.filter(q=>TYPES[q.type].movable).map(q=>{const T=TYPES[q.type];const ext=T.cyl?240:0;return [q.x-18,q.y-18,q.x+T.w+ext+18,q.y+T.h+18];});
-  for(let y=290;y<=H-h-8;y+=22)for(let x=700;x<=1480-w;x+=24){if(!boxes.some(b=>x<b[2]&&x+w>b[0]&&y<b[3]&&y+h>b[1]))return {x,y};}
+  for(let y=290;y<=H-h-8;y+=22)for(let x=700;x<=W-120-w;x+=24){if(!boxes.some(b=>x<b[2]&&x+w>b[0]&&y<b[3]&&y+h>b[1]))return {x,y};}
   for(let y=290;y<=H-h-8;y+=22)for(let x=60;x<=700;x+=24){if(!boxes.some(b=>x<b[2]&&x+w>b[0]&&y<b[3]&&y+h>b[1]))return {x,y};}
   return {x:Math.round(700+Math.random()*300),y:Math.round(400+Math.random()*200)};}
 /* ===== 선택 / 삭제 ===== */
 const bubble=$('bubble');
-function select(s){sel=s;if(!s)bubble.style.display='none';}
+function select(s){sel=s;if(!s)bubble.style.display='none';setTimeout(drawFlow,0);}
 function showBubble(x,y){bubble.style.left=((x-tcam.x)*tcam.s)+'px';bubble.style.top=((y-tcam.y)*tcam.s)+'px';bubble.style.display='block';}
 $('delBtn').onclick=()=>{if(!sel)return;
   if(sel.t==='w'){const w=wires.find(q=>q.id===sel.id);if(w){wires=wires.filter(q=>q!==w);hist(w.kind,{op:'del',w});flash('선을 지웠어요 (E/P ↶ 로 되돌리기)');}}
@@ -679,10 +988,15 @@ function doAct(act,p,e){
   if(act==='power'){S.power=!S.power;if(!S.power)clearLoads();flash(S.power?'전원 ON (DC 24V)':'전원 OFF');}
   else if(act==='air'){S.air=!S.air;flash(S.air?`공기 공급 열림 (${S.reg} bar)`:'공기 공급 닫힘');}
   else if(act==='reg'){S.reg=S.reg>=8?1:S.reg+1;save();flash(`레귤레이터 압력 ${S.reg} bar`);}
+  else if(act.startsWith('btn:')&&act.slice(4)==='2'){const rt=RT[p.id];rt.st[2]=!rt.st[2];flash(`PB${(p.base||1)+2} (수동복귀) ${rt.st[2]?'ON — 눌린 채로 유지, 다시 누르면 OFF':'OFF'}`);}
   else if(act.startsWith('btn:')){const r=+act.slice(4),rt=RT[p.id];rt.st[r]=true;const t0=performance.now();presses.set(e.pointerId,()=>setTimeout(()=>{rt.st[r]=false;},Math.max(0,160-(performance.now()-t0))));}
   else if(act.startsWith('tset:')){const [,r,d]=act.split(':');p.sets=p.sets||[3,3];p.sets[r]=clamp(p.sets[r]+(+d),1,99);save();}
   else if(act.startsWith('cset:')){p.preset=clamp((p.preset||3)+(+act.slice(5)),1,99);save();}
   else if(act==='creset'){RT[p.id].n=0;flash('카운터 리셋');}
+  else if(act==='estop'){const rt=RT[p.id];rt.on=!rt.on;flash(rt.on?'🛑 비상정지! b접점이 끊겼어요 (버튼을 다시 누르면 해제)':'비상정지 해제',rt.on);}
+  else if(act==='mvbtn'){const rt=RT[p.id];rt.on=true;const t0=performance.now();presses.set(e.pointerId,()=>setTimeout(()=>{rt.on=false;},Math.max(0,160-(performance.now()-t0))));}
+  else if(act==='mvsel'){const rt=RT[p.id];rt.on=!rt.on;}
+  else if(act==='prvset'){p.set=(p.set||3)>=8?1:(p.set||3)+1;save();flash(`감압밸브 출구 압력 ${p.set} bar`);}
   else if(act==='thr'){const L=[100,60,30,15];p.thr=L[(L.indexOf(p.thr||100)+1)%L.length];save();flash(`유량 제어 밸브 열림 ${p.thr}%`);}
 
 }
@@ -704,6 +1018,9 @@ svg.addEventListener('pointerdown',e=>{
   pan={x:e.clientX,y:e.clientY,c0:{...tcam},id:e.pointerId,moved:false,wire:wg?wg.dataset.wire:null,q};
 });
 svg.addEventListener('pointermove',e=>{
+  if(e.pointerType==='mouse'&&!drag&&!pan&&!rodDrag){const tq=nearestTerm(pt(e),11);if(tq!==hovTerm)showHov(tq);}
+  if(conn&&conn.moved&&e.pointerId===conn.id){const tq=nearestTerm(pt(e),13);if(tq!==hovTerm)showHov(tq&&tq!==conn.from?tq:null);}
+  if(e.pointerType==='mouse'&&!drag&&!pan&&!rodDrag){const wg=e.target.closest&&e.target.closest('[data-wire]');const id=wg?wg.dataset.wire:null;if(id!==flowHover){flowHover=id;drawFlow();}}
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pinch&&ptrs.size===2){const [a,b]=[...ptrs.values()];pinchMove(pinch,a,b);return;}
   if(rodDrag&&e.pointerId===rodDrag.id){const q=pt(e);RT[rodDrag.p.id].pos=clamp(rodDrag.p0+(q.x-rodDrag.sx)/232,0,1);return;}
@@ -717,11 +1034,12 @@ svg.addEventListener('pointermove',e=>{
 function endPtr(e){if(rodDrag&&rodDrag.id===e.pointerId){const rt=RT[rodDrag.p.id];if(rt)rt.manual=false;flash(`실린더 ${rodDrag.p.label} 놓음 (${Math.round((rt?rt.pos:0)*100)}%) — 공기가 밀고 있으면 다시 움직여요`);rodDrag=null;}
   ptrs.delete(e.pointerId);if(ptrs.size<2&&pinch){pinch=null;commitCam();}
   const f=presses.get(e.pointerId);if(f){f();presses.delete(e.pointerId);}
-  if(conn&&conn.id===e.pointerId){if(conn.moved){const t=nearestTerm(pt(e),13);if(t&&t!==conn.from)addWire(conn.from,t);pending=null;updPending();}conn=null;}
+  if(conn&&conn.id===e.pointerId){if(conn.moved)showHov(null);if(conn.moved){const t=nearestTerm(pt(e),13);if(t&&t!==conn.from)addWire(conn.from,t);pending=null;updPending();}conn=null;}
   if(drag&&drag.id===e.pointerId){if(drag.moved)save();else{const T=TYPES[drag.p.type];if(T.deletable){sel={t:'p',id:drag.p.id};showBubble(drag.p.x+T.w/2,drag.p.y);}}drag=null;}
   if(pan&&pan.id===e.pointerId){const P=pan;pan=null;if(P.moved)commitCam();if(!P.moved&&e.type==='pointerup'){
-    if(P.wire&&!pending){sel={t:'w',id:P.wire};renderWires();showBubble(P.q.x,P.q.y);}
+    if(P.wire&&!pending){sel={t:'w',id:P.wire};renderWires();showBubble(P.q.x,P.q.y);drawFlow();}
     else{if(pending){pending=null;updPending();flash('연결 취소');}if(sel){select(null);renderWires();}}}}}
+svg.addEventListener('pointerleave',()=>{if(flowHover){flowHover=null;drawFlow();}showHov(null);});
 svg.addEventListener('pointerup',endPtr);svg.addEventListener('pointercancel',endPtr);
 window.addEventListener('blur',()=>{presses.forEach(f=>f());presses.clear();});
 svg.addEventListener('contextmenu',e=>e.preventDefault());
@@ -765,9 +1083,10 @@ document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>{closeMenus();a
 let confirmCmd=null;
 document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{const c=b.dataset.cmd;closeMenus();
   if(c.startsWith('ex:'))loadExample(c.slice(3));
-  else if(c==='clearW'){if(!wires.length)return;wires=[];HIST.e=[];HIST.p=[];renderWires();save();flash('배선을 모두 지웠어요');}
+  else if(c==='clearW'){if(!wires.length)return;wires=wires.filter(w=>w.j);HIST.e=[];HIST.p=[];renderWires();save();flash('배선을 모두 지웠어요');}
   else if(c==='zin')setCam(zoomAt(1.3),true);else if(c==='zout')setCam(zoomAt(1/1.3),true);else if(c==='zfit')fit();
-  else if(c==='help')$('modal').classList.add('show');});
+  else if(c==='help')$('modal').classList.add('show');
+  else if(c==='mute'){buzzMute=!buzzMute;$('muteItem').textContent=buzzMute?'부저 소리 켜기':'부저 소리 끄기';flash(buzzMute?'부저 소리 꺼짐':'부저 소리 켜짐');}});
 $('reView').onclick=fit;$('closeHelp').onclick=()=>$('modal').classList.remove('show');
 $('modal').onclick=e=>{if(e.target.id==='modal')$('modal').classList.remove('show');};
 document.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>undoK(b.dataset.u,false));
@@ -777,8 +1096,8 @@ document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>undoK(b.dataset.r
 
 /* ===== 시작 ===== */
 let loaded=false;
-try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.parts)&&s.parts.some(p=>p.id==='PW')){parts=s.parts;wires=s.wires||[];S.reg=s.reg||5;loaded=true;}}catch(e){}
-if(loaded)rebuild();else loadExample('hold');
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&Array.isArray(s.parts)&&s.parts.some(p=>p.id==='PW')){parts=s.parts;wires=s.wires||[];S.reg=s.reg||5;loaded=true;normParts();}}catch(e){}
+if(loaded){if(!wires.some(w=>w.j))wires=JUMPERS().concat(wires);rebuild();save();}else loadExample('hold');
 fit();
 let last=performance.now(),tick=0;
 function frameLoop(now){const dt=Math.min(.05,(now-last)/1000);last=now;hints=[];
@@ -787,6 +1106,7 @@ function frameLoop(now){const dt=Math.min(.05,(now-last)/1000);last=now;hints=[]
   for(const p of parts){const T=TYPES[p.type];if(T.render)T.render(p,RT[p.id]);}
   airOff=(airOff-dt*40)%18;
   for(const w of wires)if(w.kind==='p'&&WEL[w.id]){const on=PST(w.a)==='P';setA(WEL[w.id],'display',on?'':'none');if(on)WEL[w.id].setAttribute('stroke-dashoffset',airOff.toFixed(1));}
+  if((flowHover||(sel&&sel.t==='w'))&&(++flowTick%8===0))drawFlow();
   updStatus(now);requestAnimationFrame(frameLoop);}
 requestAnimationFrame(frameLoop);
 window.__sim={S,get parts(){return parts},get wires(){return wires},get RT(){return RT},loadExample,applyState,flash,busy:()=>!!(drag||conn||rodDrag||pending||pinch)};
